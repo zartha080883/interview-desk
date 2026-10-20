@@ -1,0 +1,2171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Interview Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onerror="window.gisBlocked=true"></script>
+<style>
+/* Layout: a hiring desk — top bar, section tabs, one view at a time; candidate details open in a side drawer */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --sunk:#e9ede8; --line:#d5dbd3; --fg:#18201b; --muted:#5d6a61;
+  --accent:#1f6b52; --accent-fg:#ffffff; --accent-soft:#dcebe3;
+  --ok:#1f7a4a; --ok-soft:#dff1e6; --warn:#9a6200; --warn-soft:#fbefd6; --bad:#b3261e; --bad-soft:#fbe3e0; --info:#2b5c9e; --info-soft:#e1ebf8;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111613; --surface:#18201b; --sunk:#0d110f; --line:#2c3630; --fg:#e6ece7; --muted:#97a59b;
+  --accent:#5fc49b; --accent-fg:#0b1a13; --accent-soft:#1d3a2e;
+  --ok:#6dd39a; --ok-soft:#173826; --warn:#f0b955; --warn-soft:#3a2c10; --bad:#ff8a80; --bad-soft:#3d1a17; --info:#8ab4f0; --info-soft:#1a2a40;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111613; --surface:#18201b; --sunk:#0d110f; --line:#2c3630; --fg:#e6ece7; --muted:#97a59b;
+  --accent:#5fc49b; --accent-fg:#0b1a13; --accent-soft:#1d3a2e;
+  --ok:#6dd39a; --ok-soft:#173826; --warn:#f0b955; --warn-soft:#3a2c10; --bad:#ff8a80; --bad-soft:#3d1a17; --info:#8ab4f0; --info-soft:#1a2a40;
+  color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.35rem}
+h2{font-size:1.15rem}
+h3{font-size:1rem}
+a{color:var(--accent)}
+.wrap{max-width:1240px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:18px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand .org{display:block;font-size:.8rem;color:var(--muted)}
+.mark{width:32px;height:32px;border-radius:8px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font:700 13px var(--mono)}
+.who{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
+.who strong{color:var(--fg);font-weight:600}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:24px;scrollbar-width:none}
+.tabs button{font:600 .92rem var(--body);background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;gap:7px;align-items:center}
+.tabs button:hover{color:var(--fg)}
+.tabs button[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tabs .count{font:500 .72rem var(--mono);background:var(--sunk);color:var(--muted);border-radius:999px;padding:1px 7px}
+.btn{font:600 .9rem var(--body);border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-visible,.tabs button:focus-visible,.chip:focus-visible,tr.click:focus-visible,.kpi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:5px 10px;font-size:.82rem}
+.btn.link{border:0;background:none;padding:0;color:var(--accent);font-weight:600}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:24px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-head .sub,.sub{color:var(--muted);font-size:.85rem}
+.panel-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.side,.stack{display:flex;flex-direction:column;gap:24px;min-width:0}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=search],input[type=date],input[type=time],input[type=number],select,textarea{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:70px}
+.hint{font-size:.8rem;color:var(--muted);margin:0}
+.hint code,.mono{font-family:var(--mono);font-size:.8rem}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:.9rem}
+.check input{margin-top:3px;accent-color:var(--accent)}
+.inline{display:flex;gap:8px;flex-wrap:wrap}
+.inline input{flex:1 1 220px}
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px 16px;text-align:center;background:var(--bg);cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:center}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-family:var(--display);font-size:1rem}
+.cols{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.cols span{font:500 .75rem var(--mono);background:var(--sunk);border-radius:5px;padding:2px 7px}
+.banner{border-radius:8px;padding:10px 12px;font-size:.88rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner.info{background:var(--info-soft)}
+.banner.warn{background:var(--warn-soft)}
+.banner.bad{background:var(--bad-soft)}
+.banner.ok{background:var(--ok-soft)}
+.summary{display:flex;gap:18px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+.summary b{font:600 1rem var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:760px}
+table.compact{min-width:520px}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;font-weight:600;padding:9px 12px;background:var(--sunk);white-space:nowrap}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+td.when{font-family:var(--mono);font-size:.82rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+td .dim,.dim{color:var(--muted);font-size:.8rem}
+tr.is-sample td{color:var(--muted)}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--bg)}
+tr.archived td{opacity:.6}
+td.n .btn.link{font:600 .88rem var(--mono)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-ready{background:var(--accent-soft);color:var(--accent)}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-bad{background:var(--bad-soft);color:var(--bad)}
+.p-info{background:var(--info-soft);color:var(--info)}
+.p-muted{background:var(--sunk);color:var(--muted)}
+.issues{margin:4px 0 0;padding:0;list-style:none;font-size:.78rem}
+.issues li.e{color:var(--bad)}
+.issues li.w{color:var(--warn)}
+.progress{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.empty{padding:28px 12px;text-align:center;color:var(--muted);font-size:.9rem}
+.setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.88rem;max-width:min(92vw,520px);box-shadow:0 6px 24px rgb(0 0 0 / .2);z-index:50}
+.rowacts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:24px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpis.compact{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.kpis.compact .kpi{padding:8px 12px}
+.kpis.compact .kpi b{font-size:1.25rem}
+.kpis.compact .kpi span{font-size:.78rem}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.kpi:hover{border-color:var(--muted)}
+.kpi b{display:block;font:600 1.7rem/1.2 var(--display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:.84rem;color:var(--muted)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.list li:first-child{border-top:0;padding-top:0}
+.list .when{font:500 .8rem var(--mono);color:var(--muted);min-width:118px;font-variant-numeric:tabular-nums}
+.list .who{flex:1 1 180px;display:block;min-width:0}
+.list .who strong{display:block}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filters input[type=search]{flex:1 1 220px;max-width:340px}
+.filters select{width:auto;max-width:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 .8rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:4px 11px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip span{font:500 .72rem var(--mono);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.chip[aria-pressed="true"] span{color:var(--accent-fg)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.fgrid .wide{grid-column:1/-1}
+dialog{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+dialog::backdrop{background:rgb(0 0 0 / .4)}
+dialog.drawer{margin:0 0 0 auto;height:100dvh;max-height:100dvh;width:min(780px,100vw);border-radius:0;border-width:0 0 0 1px}
+.dlg{display:flex;flex-direction:column;gap:18px;padding:20px}
+.dlg-head{display:flex;gap:12px;align-items:flex-start}
+.dlg-head > div{min-width:0}
+.dlg-head .x{margin-left:auto}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
+.dlg-foot .left{margin-right:auto}
+.section{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:16px}
+.stagebar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+.stagebar .field{flex:0 1 220px}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.timeline li{border-left:2px solid var(--line);padding-left:12px}
+.timeline li.k-stage{border-color:var(--accent)}
+.timeline li.k-interview{border-color:var(--info)}
+.timeline .meta{font-size:.78rem;color:var(--muted)}
+.timeline p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ivcards{display:flex;flex-direction:column;gap:10px}
+.ivcard{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.ivcard .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ivcard .top strong{margin-right:auto}
+.ivcard p{margin:0;font-size:.88rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.cvframe{width:100%;height:min(75dvh,820px);border:1px solid var(--line);border-radius:8px;background:var(--sunk)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand"><div class="mark" aria-hidden="true">ID</div><div><h1>Interview Desk</h1><span class="org" id="orgLabel"></span></div></div>
+    <div class="who">
+      <span id="whoText">Not connected to Google</span>
+      <a class="btn small" id="sheetLink" target="_blank" rel="noopener" hidden>Open sheet</a>
+      <button class="btn small" id="refreshBtn" type="button" data-act="refresh" hidden>Refresh</button>
+      <button class="btn primary" id="connectBtn" type="button" data-act="connect">Connect Google</button>
+      <button class="btn" id="signoutBtn" type="button" data-act="signout" hidden>Sign out / switch account</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button type="button" data-view="dashboard">Dashboard</button>
+    <button type="button" data-view="candidates">Candidates <span class="count" id="nCand"></span></button>
+    <button type="button" data-view="positions">Positions <span class="count" id="nPos"></span></button>
+    <button type="button" data-view="interviews">Interviews <span class="count" id="nIv"></span></button>
+    <button type="button" data-view="import">Bulk import</button>
+    <button type="button" data-view="settings">Settings</button>
+  </nav>
+
+  <section class="panel" id="gate" hidden></section>
+
+  <!-- ============ Dashboard ============ -->
+  <section class="view" id="v-dashboard" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="two">
+      <section class="panel">
+        <div class="panel-head"><h2>Upcoming interviews</h2><span class="sub">Next 14 days</span>
+          <div class="actions"><button class="btn small" type="button" data-act="new-iv">Schedule interview</button></div></div>
+        <ul class="list" id="dUpcoming"></ul>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Waiting for an outcome</h2><span class="sub">Interviews that have taken place</span></div>
+        <ul class="list" id="dOutcome"></ul>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Offers &amp; joining</h2><span class="sub">Offered and hired candidates</span></div>
+        <ul class="list" id="dJoining"></ul>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Pipeline by position</h2><span class="sub">Click a number to see those candidates</span></div>
+        <div id="dPipeline"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ Candidates ============ -->
+  <section class="view panel" id="v-candidates" hidden>
+    <div class="panel-head"><h2>Candidates</h2><span class="sub" id="candSub"></span>
+      <div class="actions"><button class="btn" type="button" data-act="new-iv">Schedule interview</button><button class="btn primary" type="button" data-act="new-cand">Add candidate</button></div></div>
+    <div class="filters">
+      <input type="search" id="fQ" placeholder="Search name, email, phone, tags…" aria-label="Search candidates">
+      <select id="fPos" aria-label="Filter by position"></select>
+      <label class="check"><input type="checkbox" id="fArch"> <span>Show archived</span></label>
+    </div>
+    <div class="chips" id="fStages" role="group" aria-label="Filter by stage"></div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Candidate</th><th>Position</th><th>Stage</th><th>Expected salary</th><th>Availability</th><th>Joining</th><th>Next interview</th></tr></thead>
+        <tbody id="candBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ Positions ============ -->
+  <section class="view panel" id="v-positions" hidden>
+    <div class="panel-head"><h2>Positions</h2><span class="sub">Roles you're hiring for</span>
+      <div class="actions"><button class="btn primary" type="button" data-act="new-pos">Add position</button></div></div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Position</th><th>Status</th><th class="n">Openings</th><th>Salary range</th><th class="n">In pipeline</th><th class="n">Hired</th><th></th></tr></thead>
+        <tbody id="posBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ Interviews ============ -->
+  <section class="view panel" id="v-interviews" hidden>
+    <div class="panel-head"><h2>Interview tracker</h2><span class="sub" id="ivSub"></span>
+      <div class="actions"><button class="btn" type="button" data-act="refresh-replies" id="replyBtn">Refresh replies</button><button class="btn primary" type="button" data-act="new-iv">Schedule interview</button></div></div>
+    <div id="linkBanner"></div>
+    <div class="kpis compact" id="replyKpis" style="margin-bottom:0" role="group" aria-label="Filter upcoming interviews by candidate reply"></div>
+    <div class="filters">
+      <div class="chips" id="ivFilter" role="group" aria-label="Which interviews"></div>
+      <select id="ivPos" aria-label="Filter by position"></select>
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>When</th><th>Candidate</th><th>Round</th><th>Status</th><th>Invite sent to</th><th>Reply</th><th>Google Meet</th><th>Outcome</th><th></th></tr></thead>
+        <tbody id="ivBody"></tbody>
+      </table>
+    </div>
+    <div class="section">
+      <div class="panel-head">
+        <h2>Scheduled in Google Calendar</h2><span class="sub" data-sched-sub>Interviews created from this desk</span>
+        <div class="actions"><button class="btn" type="button" data-act="refresh-replies">Refresh</button></div>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Candidate</th><th>When</th><th>Candidate response</th><th>Meet</th><th></th></tr></thead>
+          <tbody id="schedBody" data-sched></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Bulk import ============ -->
+  <section class="view" id="v-import" hidden>
+    <section class="panel" id="recPanel" style="margin-bottom:24px">
+      <div class="panel-head"><h2>Import existing records</h2><span class="sub">Bring in candidates you already track elsewhere. Nothing is emailed unless you choose to.</span></div>
+      <div class="filters">
+        <select id="recTab" aria-label="Tab in your hiring sheet"></select>
+        <button class="btn" type="button" data-act="rec-load-tab" id="recTabBtn">Load this tab</button>
+        <span class="dim">or</span>
+        <button class="btn" type="button" data-act="rec-file">Choose an Excel / CSV file</button>
+        <input type="file" id="recFile" accept=".xlsx,.xls,.csv" hidden>
+      </div>
+      <div id="recBody" class="stack" style="gap:14px"></div>
+    </section>
+    <div class="panel-head" style="margin-bottom:12px"><h2>Schedule interviews from a sheet</h2><span class="sub">Each row is an interview: creates the candidate and sends the calendar invite.</span></div>
+    <div class="grid">
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-head"><h2>Interview sheet</h2></div>
+          <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose an Excel or CSV file">
+            <strong>Drop your Excel sheet here</strong>
+            <span class="hint">or click to choose .xlsx, .xls or .csv</span>
+            <div class="cols"><span>Name</span><span>Email</span><span>Date</span><span>Time</span><span>Duration</span></div>
+            <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+          </div>
+          <p class="hint">Optional columns: <code>Position</code>, <code>Round</code>, <code>Interviewers</code>, <code>Phone</code>, <code>Expected salary</code>, <code>Current salary</code>, <code>Notice period</code>, <code>Availability</code>, <code>Source</code>, <code>Notes</code>.</p>
+          <p class="hint">To schedule one interview, use <b>Schedule</b> next to the candidate on the Candidates page.</p>
+          <p class="hint">Each row creates (or updates) the candidate, adds the position if it's new, records the interview and sends the calendar invite.</p>
+          <div class="field">
+            <label for="dateFmt">Typed dates like 03/04/2026 mean</label>
+            <select id="dateFmt"><option value="DMY">Day / Month / Year</option><option value="MDY">Month / Day / Year</option></select>
+            <p class="hint">Only used for dates typed as text. Real Excel date cells are read exactly.</p>
+          </div>
+          <label class="check"><input type="checkbox" id="autoSync"> <span>Sync and send invites as soon as a file is imported</span></label>
+          <div><button class="btn" id="templateBtn" type="button">Download Excel template</button></div>
+        </section>
+      </aside>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Review &amp; send</h2><span class="sub" id="fileName">Example rows</span>
+          <div class="actions">
+            <button class="btn" id="clearBtn" type="button">Clear</button>
+            <button class="btn primary" id="syncBtn" type="button" disabled>Sync &amp; send invites</button>
+          </div>
+        </div>
+        <div class="banner info" id="sampleBanner">These are example rows to show the format. Import your sheet to replace them; examples are never sent.</div>
+        <div id="syncMsg" hidden></div>
+        <div class="progress" id="progress" hidden><i id="progressBar"></i></div>
+        <div class="summary" id="summary"></div>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Candidate</th><th>When</th><th>Duration</th><th>Guests</th><th>Interview status</th><th>Sync</th></tr></thead>
+            <tbody id="reviewBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <section class="panel" style="margin-top:24px">
+      <div class="panel-head">
+        <h2>Scheduled in Google Calendar</h2><span class="sub" data-sched-sub>Interviews created from this desk</span>
+        <div class="actions"><button class="btn" type="button" data-act="refresh-replies">Refresh</button></div>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Candidate</th><th>When</th><th>Candidate response</th><th>Meet</th><th></th></tr></thead>
+          <tbody id="schedBodyImport" data-sched></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ Settings ============ -->
+  <section class="view" id="v-settings" hidden>
+    <div class="two">
+      <div class="stack">
+        <section class="panel">
+          <div class="panel-head"><h2>Hiring sheet</h2><span class="sub">Where positions, candidates, interviews and notes are kept</span></div>
+          <div id="sheetStatus"></div>
+          <div><button class="btn primary" type="button" data-act="create-sheet" id="createSheetBtn">Create a new hiring sheet</button></div>
+          <div class="field">
+            <label for="sheetUrl">Or use an existing hiring sheet</label>
+            <div class="inline"><input type="url" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off" spellcheck="false"><button class="btn" type="button" data-act="link-sheet">Use this sheet</button></div>
+            <p class="hint">Colleagues: paste the link the sheet's owner shared with you (they need to give you <b>Editor</b> access).</p>
+          </div>
+          <div class="field">
+            <label for="cvShare">Share uploaded CVs with</label>
+            <input type="text" id="cvShare" placeholder="e.g. owner@yourclinic.com, manager@yourclinic.com" autocomplete="off" spellcheck="false">
+            <p class="hint">Each CV is saved in a <b>CVs</b> folder in the Google Drive of whoever uploads it, private by default. List the colleagues who should be able to open them (view only). Applies to CVs uploaded from now on.</p>
+          </div>
+        </section>
+
+        <section class="panel setup">
+          <div class="panel-head"><h2>Google sign-in</h2><span class="sub">One-time setup per deployment</span></div>
+          <ol>
+            <li>In Google Cloud Console, enable the <b>Google Calendar API</b>, the <b>Google Sheets API</b> and the <b>Google Drive API</b> (for CVs).</li>
+            <li>Create an <b>OAuth client ID</b> of type <i>Web application</i>.</li>
+            <li>Under <i>Authorized JavaScript origins</i>, add <code class="mono" id="originText"></code></li>
+            <li>Paste the client ID below.</li>
+          </ol>
+          <div class="field">
+            <label for="clientId">OAuth client ID</label>
+            <input type="text" id="clientId" placeholder="1234567890-abc123.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+          </div>
+          <div><button class="btn primary" id="saveClient" type="button">Save client ID</button></div>
+          <p class="hint">Stored only in this browser. You can also set <code>DEFAULT_CLIENT_ID</code> (and <code>DEFAULT_SHEET_ID</code>) at the top of the script so nobody has to paste anything.</p>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Calendar &amp; invites</h2></div>
+        <div class="field">
+          <label for="calendarSel">Create events in</label>
+          <select id="calendarSel" disabled><option>Connect Google first</option></select>
+          <p class="hint">Any calendar you own or can edit. Invites go out from that calendar's owner.</p>
+        </div>
+        <div class="field">
+          <label for="tzSel">Interview times are in</label>
+          <select id="tzSel"></select>
+        </div>
+        <div class="field">
+          <label for="orgName">Sender (organisation)</label>
+          <input type="text" id="orgName" value="Zen Physiotherapy">
+          <p class="hint">Shown in the title and signed on the invite as <code>{org}</code>.</p>
+        </div>
+        <div class="field">
+          <label for="titleTpl">Event title</label>
+          <input type="text" id="titleTpl" value="[Interview] {position} - {name}/{org}">
+          <p class="hint">Placeholders: <code>{name}</code> <code>{position}</code> <code>{round}</code> <code>{org}</code> <code>{duration}</code></p>
+        </div>
+        <div class="field">
+          <label for="descTpl">Invite message</label>
+          <textarea id="descTpl" rows="8">Hi {name},
+
+Your interview is scheduled for {duration} minutes. Please accept this invite to confirm.
+
+Looking forward to speaking with you.
+
+Regards,
+{org}</textarea>
+        </div>
+        <label class="check"><input type="checkbox" id="meetChk" checked> <span>Add a Google Meet link to video interviews</span></label>
+      </section>
+    </div>
+  </section>
+</div>
+
+<!-- ============ Candidate drawer ============ -->
+<dialog id="candDlg" class="drawer" aria-labelledby="cTitle">
+  <div class="dlg">
+    <div class="dlg-head">
+      <div><h2 id="cTitle">New candidate</h2><span class="sub" id="cSub"></span></div>
+      <button class="btn small x" type="button" data-act="close">Close</button>
+    </div>
+    <div class="stagebar">
+      <div class="field"><label for="cStage">Stage</label><select id="cStage"></select></div>
+      <button class="btn primary" type="button" data-act="new-iv-cand" id="cSchedTop" hidden>Schedule interview</button>
+      <span class="hint" id="cStageHint"></span>
+    </div>
+    <form id="candForm" class="fgrid" autocomplete="off">
+      <div class="field"><label for="cName">Full name *</label><input type="text" id="cName" required></div>
+      <div class="field"><label for="cEmail">Email</label><input type="email" id="cEmail"></div>
+      <div class="field"><label for="cPhone">Phone</label><input type="tel" id="cPhone"></div>
+      <div class="field"><label for="cPos">Position</label><select id="cPos"></select></div>
+      <div class="field"><label for="cSource">Source</label><input type="text" id="cSource" list="sourceList" placeholder="Referral, Indeed, walk-in…"></div>
+      <div class="field"><label for="cLoc">Current location</label><input type="text" id="cLoc"></div>
+      <div class="field"><label for="cCur">Current salary</label><input type="text" id="cCur" placeholder="e.g. ₹35,000 / month"></div>
+      <div class="field"><label for="cExp">Expected salary</label><input type="text" id="cExp" placeholder="e.g. ₹45,000 / month"></div>
+      <div class="field"><label for="cOff">Offered salary</label><input type="text" id="cOff"></div>
+      <div class="field"><label for="cNotice">Notice period</label><input type="text" id="cNotice" placeholder="e.g. 30 days, immediate"></div>
+      <div class="field"><label for="cAvail">Availability</label><input type="text" id="cAvail" placeholder="e.g. Weekdays after 5pm, from 1 Dec"></div>
+      <div class="field"><label for="cJoin">Joining date</label><input type="date" id="cJoin"></div>
+      <div class="field"><label for="cRating">Overall rating</label><select id="cRating"><option value="">Not rated</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
+      <div class="field"><label for="cResume">CV / resume link</label><input type="url" id="cResume" placeholder="Drive or other link"></div>
+      <div class="field wide"><label for="cTags">Tags</label><input type="text" id="cTags" placeholder="e.g. sports rehab, Hindi, part-time ok"></div>
+      <div class="wide rowacts">
+        <button class="btn primary" type="submit" id="cSave">Add candidate</button>
+        <a class="btn" id="cResumeLink" target="_blank" rel="noopener" hidden>Open CV</a>
+        <button class="btn" type="button" data-act="archive" id="cArchive" hidden>Archive</button>
+      </div>
+    </form>
+    <div id="cMore" class="stack" hidden>
+      <div class="section" id="cvSection">
+        <div class="panel-head"><h3>CV / resume</h3><span class="sub" id="cvName"></span><div class="actions" id="cvActions"></div></div>
+        <div id="cvBody"></div>
+        <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.png,.jpg,.jpeg" hidden>
+      </div>
+      <div class="section">
+        <div class="panel-head"><h3>Interviews</h3><div class="actions"><button class="btn small" type="button" data-act="new-iv-cand">Schedule interview</button></div></div>
+        <div class="ivcards" id="cIvs"></div>
+      </div>
+      <div class="section">
+        <div class="panel-head"><h3>Notes &amp; history</h3></div>
+        <form id="noteForm" class="stack" style="gap:8px">
+          <textarea id="noteText" aria-label="New note" placeholder="Add a note — phone screen summary, reference check, salary discussion…"></textarea>
+          <div><button class="btn" type="submit">Add note</button></div>
+        </form>
+        <ul class="timeline" id="cNotes"></ul>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ Interview dialog ============ -->
+<dialog id="ivDlg" aria-labelledby="ivTitle">
+  <form class="dlg" id="ivForm" autocomplete="off">
+    <div class="dlg-head"><div><h2 id="ivTitle">Schedule interview</h2><span class="sub" id="ivSubt"></span></div><button class="btn small x" type="button" data-act="close">Close</button></div>
+    <div class="fgrid">
+      <div class="field wide"><label for="ivCand">Candidate</label><select id="ivCand"></select></div>
+      <div class="field"><label for="ivRound">Round</label><input type="text" id="ivRound" list="roundList" value="Interview"></div>
+      <div class="field"><label for="ivMode">Mode</label><select id="ivMode"><option>In person</option><option>Video call</option><option>Phone</option></select></div>
+      <div class="field"><label for="ivDate">Date</label><input type="date" id="ivDate" required></div>
+      <div class="field"><label for="ivTime">Start time</label><input type="time" id="ivTime" required></div>
+      <div class="field"><label for="ivDur">Duration (min)</label><input type="number" id="ivDur" min="5" max="720" step="5" value="30"></div>
+      <div class="field"><label for="ivLoc">Location</label><input type="text" id="ivLoc" placeholder="Clinic address, room…"></div>
+      <div class="field wide"><label for="ivWho">Interviewers</label><input type="text" id="ivWho" placeholder="Emails, comma separated — added as guests"></div>
+      <label class="check wide" id="ivInviteRow"><input type="checkbox" id="ivInvite" checked> <span>Send a Google Calendar invite to the candidate</span></label>
+      <p class="hint wide" id="ivTzHint"></p>
+    </div>
+    <div class="fgrid section" id="ivOutcome">
+      <div class="field"><label for="ivStatus">Status</label><select id="ivStatus"></select></div>
+      <div class="field"><label for="ivRating">Rating</label><select id="ivRating"><option value="">—</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
+      <div class="field"><label for="ivRec">Recommendation</label><select id="ivRec"></select></div>
+      <div class="field wide"><label for="ivFeedback">Interview notes &amp; feedback</label><textarea id="ivFeedback" rows="5" placeholder="Clinical knowledge, communication, practical skills, concerns…"></textarea></div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn danger left" type="button" data-act="cancel-iv-dlg" id="ivCancelBtn" hidden>Cancel interview…</button>
+      <button class="btn" type="button" data-act="close">Close</button>
+      <button class="btn primary" type="submit" id="ivSave">Schedule</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ Position dialog ============ -->
+<dialog id="posDlg" aria-labelledby="pTitleH">
+  <form class="dlg" id="posForm" autocomplete="off">
+    <div class="dlg-head"><h2 id="pTitleH">Add position</h2><button class="btn small x" type="button" data-act="close">Close</button></div>
+    <div class="fgrid">
+      <div class="field wide"><label for="pTitle">Title *</label><input type="text" id="pTitle" required placeholder="e.g. Senior Physiotherapist"></div>
+      <div class="field"><label for="pDept">Department</label><input type="text" id="pDept" placeholder="e.g. Sports rehab"></div>
+      <div class="field"><label for="pLoc">Location</label><input type="text" id="pLoc" placeholder="Clinic / branch"></div>
+      <div class="field"><label for="pType">Employment type</label><select id="pType"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Locum</option></select></div>
+      <div class="field"><label for="pOpen">Openings</label><input type="number" id="pOpen" min="0" step="1" value="1"></div>
+      <div class="field"><label for="pSalary">Salary range</label><input type="text" id="pSalary" placeholder="e.g. ₹40–55k / month"></div>
+      <div class="field"><label for="pStatus">Status</label><select id="pStatus"></select></div>
+      <div class="field wide"><label for="pDesc">Notes / requirements</label><textarea id="pDesc" rows="4"></textarea></div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn left" type="button" data-act="pos-cands" id="pCands" hidden>View candidates</button>
+      <button class="btn" type="button" data-act="close">Close</button>
+      <button class="btn primary" type="submit" id="pSave">Add position</button>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="roundList"><option>Screening call</option><option>Clinical assessment</option><option>Practical / treatment demo</option><option>Interview with clinic lead</option><option>HR &amp; salary discussion</option><option>Final round</option></datalist>
+<datalist id="sourceList"><option>Referral</option><option>Walk-in</option><option>Website</option><option>LinkedIn</option><option>Indeed</option><option>Naukri</option><option>College placement</option><option>Excel import</option></datalist>
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Config ============ */
+const DEFAULT_CLIENT_ID = "";            // optional: paste your OAuth client ID here to skip the Setup step
+const DEFAULT_SHEET_ID = "";             // optional: the hiring sheet's ID (from its URL) so colleagues don't have to link it
+const SCOPES = ["https://www.googleapis.com/auth/calendar.calendarlist.readonly", "https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file"];
+const CAL_API = "https://www.googleapis.com/calendar/v3";
+const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
+const DRIVE_API = "https://www.googleapis.com/drive/v3";
+const TAG = "interview-desk";            // private extended property marking our events
+
+const STAGES = ["Applied", "Screening", "Interviewing", "Shortlisted", "Offered", "Hired", "Joined", "Rejected", "Withdrawn"];
+const ACTIVE = ["Applied", "Screening", "Interviewing", "Shortlisted", "Offered"];
+const STAGE_CLS = { Applied: "p-muted", Screening: "p-info", Interviewing: "p-ready", Shortlisted: "p-info", Offered: "p-warn", Hired: "p-ok", Joined: "p-ok", Rejected: "p-bad", Withdrawn: "p-muted" };
+const POS_STATUS = { Open: "p-ok", "On hold": "p-warn", Filled: "p-info", Closed: "p-muted" };
+const IV_STATUS = { Scheduled: "p-info", Completed: "p-ok", "No-show": "p-bad", Cancelled: "p-muted" };
+const RECS = { "Strong hire": "p-ok", Hire: "p-ok", Hold: "p-warn", "No hire": "p-bad" };
+const RESP = { accepted: ["p-ok", "Accepted"], declined: ["p-bad", "Declined"], tentative: ["p-warn", "Maybe"], needsAction: ["p-muted", "No reply yet"] };
+
+/* Sheet layout: one tab per record type; columns are matched by header text, so people can reorder or add their own columns. */
+const SCHEMA = {
+  Positions: [["id","ID"],["title","Title"],["department","Department"],["location","Location"],["employmentType","Employment type"],["openings","Openings"],["salaryRange","Salary range"],["status","Status"],["description","Notes"],["createdAt","Created"],["updatedAt","Updated"]],
+  Candidates: [["id","ID"],["name","Name"],["email","Email"],["phone","Phone"],["positionId","Position ID"],["positionTitle","Position"],["stage","Stage"],["source","Source"],["currentSalary","Current salary"],["expectedSalary","Expected salary"],["offeredSalary","Offered salary"],["noticePeriod","Notice period"],["availability","Availability"],["joiningDate","Joining date"],["location","Location"],["rating","Rating"],["resumeLink","CV link"],["resumeName","CV file"],["tags","Tags"],["archived","Archived"],["createdAt","Created"],["updatedAt","Updated"]],
+  Interviews: [["id","ID"],["candidateId","Candidate ID"],["candidateName","Candidate"],["positionId","Position ID"],["round","Round"],["start","Start (UTC)"],["durationMin","Duration (min)"],["timeZone","Time zone"],["mode","Mode"],["location","Location"],["interviewers","Interviewers"],["status","Status"],["rating","Rating"],["recommendation","Recommendation"],["feedback","Feedback"],["calendarId","Calendar ID"],["eventId","Event ID"],["invitedEmail","Invite sent to"],["eventLink","Event link"],["meetLink","Meet link"],["createdBy","Created by"],["createdAt","Created"],["updatedAt","Updated"]],
+  Notes: [["id","ID"],["candidateId","Candidate ID"],["at","Time"],["author","Author"],["kind","Kind"],["text","Note"]]
+};
+const TABS = Object.keys(SCHEMA);
+
+/* ============ Small helpers ============ */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { const v = localStorage.getItem("idesk:" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem("idesk:" + k, JSON.stringify(v)); } catch {} }
+};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const pad = n => String(n).padStart(2, "0");
+let toastT;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4800); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = p => p + "_" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+const nowIso = () => new Date().toISOString();
+const pill = (cls, label) => `<span class="pill ${cls || "p-muted"}">${esc(label)}</span>`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const orgName = () => $("orgName").value.trim();
+
+/* ============ Parsing (pure) ============ */
+const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function validYMD(y, m, d){ if (!(y > 1900 && y < 2200 && m >= 1 && m <= 12 && d >= 1)) return false; return d <= new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+
+function serialParts(n){ // Excel serial -> wall-clock parts (no time zone shift)
+  const totalMin = Math.round((n - 25569) * 1440);
+  const dt = new Date(totalMin * 60000);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate(), min: dt.getUTCHours() * 60 + dt.getUTCMinutes() };
+}
+
+function parseDate(v, fmt){
+  if (v === "" || v == null) return null;
+  if (v instanceof Date && !isNaN(v)) return { y: v.getFullYear(), m: v.getMonth() + 1, d: v.getDate(), min: v.getHours() * 60 + v.getMinutes() };
+  if (typeof v === "number" && v > 1000) { const p = serialParts(v); return { ...p, min: v % 1 ? p.min : null }; }
+  let s = String(v).trim(); if (!s) return null;
+  let m, y, mo, d;
+  if ((m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[T\s]+(.+))?$/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else if ((m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})(?:\s+(.+))?$/))) {
+    let a = +m[1], b = +m[2]; y = +m[3]; if (y < 100) y += 2000;
+    if (a > 12 && b <= 12) { d = a; mo = b; } else if (b > 12 && a <= 12) { mo = a; d = b; }
+    else if (fmt === "MDY") { mo = a; d = b; } else { d = a; mo = b; }
+  }
+  else if ((m = s.match(/^(\d{1,2})[\s\-\/]+([a-z]{3,})\.?[\s\-\/,]+(\d{2,4})(?:\s+(.+))?$/i))) { d = +m[1]; mo = MONTHS.indexOf(m[2].slice(0,3).toLowerCase()) + 1; y = +m[3]; if (y < 100) y += 2000; }
+  else if ((m = s.match(/^(?:[a-z]+,?\s+)?([a-z]{3,})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})(?:\s+(.+))?$/i))) { mo = MONTHS.indexOf(m[1].slice(0,3).toLowerCase()) + 1; d = +m[2]; y = +m[3]; }
+  else return null;
+  if (!validYMD(y, mo, d)) return null;
+  const t = m[4] ? parseTime(m[4]) : null;
+  return { y, m: mo, d, min: t };
+}
+
+function parseTime(v){
+  if (v === "" || v == null) return null;
+  if (v instanceof Date && !isNaN(v)) return v.getHours() * 60 + v.getMinutes();
+  if (typeof v === "number") { const f = v >= 1 ? v % 1 : v; if (f < 0) return null; return Math.round(f * 1440) % 1440; }
+  const s = String(v).trim().toLowerCase().replace(/\s+/g, " ");
+  let m = s.match(/^(\d{1,2})(?:[:.](\d{2}))?(?::\d{2})?\s*([ap])\.?\s*m?\.?$/);
+  if (m) { let h = +m[1], mi = +(m[2] || 0); if (h < 1 || h > 12 || mi > 59) return null; if (m[3] === "p" && h !== 12) h += 12; if (m[3] === "a" && h === 12) h = 0; return h * 60 + mi; }
+  m = s.match(/^(\d{1,2})[:.h](\d{2})(?::\d{2})?$/) || s.match(/^(\d{2})(\d{2})$/);
+  if (m) { const h = +m[1], mi = +m[2]; if (h > 23 || mi > 59) return null; return h * 60 + mi; }
+  return null;
+}
+
+function parseDuration(v){
+  if (v === "" || v == null) return null;
+  if (typeof v === "number") return v > 0 && v < 1 ? Math.round(v * 1440) : Math.round(v);
+  if (v instanceof Date && !isNaN(v)) return v.getHours() * 60 + v.getMinutes();
+  const s = String(v).trim().toLowerCase();
+  let m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/); if (m) return +m[1] * 60 + +m[2];
+  m = s.match(/^(?:(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours))?\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes))?$/);
+  if (m && (m[1] || m[2])) return Math.round((+(m[1] || 0)) * 60 + (+(m[2] || 0)));
+  m = s.match(/^(\d+(?:\.\d+)?)$/); if (m) return Math.round(+m[1]);
+  return null;
+}
+
+const HEADERS = {
+  name: ["name","candidate","candidatename","fullname","intervieweename","interviewee","applicant","applicantname"],
+  email: ["email","emailaddress","mail","candidateemail","emailid","emails","e-mail"],
+  date: ["date","interviewdate","day","scheduleddate"],
+  time: ["time","starttime","interviewtime","start","slot","timeslot"],
+  datetime: ["datetime","startdatetime","interviewdatetime","when","schedule"],
+  duration: ["duration","durationmin","durationmins","durationminutes","length","mins","minutes","durationinminutes"],
+  role: ["role","position","jobtitle","job","title","opening"],
+  round: ["round","interviewround","roundname"],
+  interviewers: ["interviewers","interviewer","panel","interviewersemail","intervieweremails","guests","cc"],
+  phone: ["phone","phonenumber","mobile","mobilenumber","contact","contactnumber","whatsapp"],
+  expected: ["expectedsalary","salaryexpectation","expectedctc","expected","expectation"],
+  current: ["currentsalary","currentctc","presentsalary"],
+  notice: ["noticeperiod","notice"],
+  availability: ["availability","available","availablefrom"],
+  source: ["source","referredby","channel"],
+  note: ["notes","note","remarks","comments","comment"],
+  ivStatus: ["interviewstatus","ivstatus","status","interviewdone","done","completed","attended","interviewed"]
+};
+const normH = h => String(h || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+function mapHeaders(row){
+  const map = {};
+  row.forEach((h, i) => { const n = normH(h); for (const [k, al] of Object.entries(HEADERS)) if (map[k] === undefined && al.map(normH).includes(n)) map[k] = i; });
+  return map;
+}
+
+const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[a-z]{2,}$/i;
+// "Done", "Interviewed", "No show", "Cancelled"… -> one of the desk's interview statuses ("" = not recognised)
+function normIvStatus(v){
+  const t = String(v ?? "").trim().toLowerCase(); if (!t) return "";
+  if (/no.?show|did ?n.?t (show|come|attend)|absent|missed|not attended|didnt attend/.test(t)) return "No-show";
+  if (/cancel|withdrawn|called off/.test(t)) return "Cancelled";
+  if (/done|complete|attended|interviewed|finished|held|conducted|^yes$|^y$|^true$|^✓$|^✔$/.test(t)) return "Completed";
+  if (/schedul|booked|pending|upcoming|confirmed|invited|resched|^no$|^n$|^false$/.test(t)) return "Scheduled";
+  return "";
+}
+const splitList = s => String(s || "").split(/[,;\s]+/).map(x => x.trim()).filter(Boolean);
+
+function rowsFromMatrix(matrix, fmt){
+  let hi = -1, map = null;
+  for (let i = 0; i < Math.min(matrix.length, 15); i++) { const mp = mapHeaders(matrix[i] || []); if (mp.email !== undefined && (mp.date !== undefined || mp.datetime !== undefined)) { hi = i; map = mp; break; } }
+  if (hi < 0) return { error: "Couldn't find a header row with Email and Date columns. Use the template's column names: Name, Email, Date, Time, Duration. For a plain list of candidates, use Import existing records above instead." };
+  const out = [];
+  for (let i = hi + 1; i < matrix.length; i++) {
+    const r = matrix[i] || []; const cell = k => map[k] === undefined ? "" : r[map[k]];
+    const text = k => String(cell(k) ?? "").trim();
+    if (r.every(c => c === "" || c == null)) continue;
+    const issues = [];
+    const name = text("name");
+    const email = text("email").replace(/^mailto:/i, "");
+    let dp = map.date !== undefined ? parseDate(cell("date"), fmt) : null;
+    if (!dp && map.datetime !== undefined) dp = parseDate(cell("datetime"), fmt);
+    let min = map.time !== undefined ? parseTime(cell("time")) : null;
+    if (min == null && dp && dp.min != null) min = dp.min;
+    let dur = map.duration !== undefined ? parseDuration(cell("duration")) : null;
+    const extra = splitList(cell("interviewers"));
+    if (!name) issues.push(["w", "Name is empty — the email will be used"]);
+    if (!email) issues.push(["e", "Email is missing"]); else if (!EMAIL_RE.test(email)) issues.push(["e", `"${email}" isn't a valid email`]);
+    if (!dp) issues.push(["e", `Date "${cell("date") || cell("datetime") || ""}" couldn't be read`]);
+    if (min == null) issues.push(["e", `Time "${cell("time") ?? ""}" couldn't be read`]);
+    if (dur == null) { if (map.duration === undefined || cell("duration") === "") { dur = 30; issues.push(["w", "No duration — using 30 min"]); } else issues.push(["e", `Duration "${cell("duration")}" couldn't be read`]); }
+    else if (dur < 5 || dur > 720) issues.push(["e", `Duration of ${dur} min looks wrong`]);
+    const badExtra = extra.filter(e => !EMAIL_RE.test(e)); if (badExtra.length) issues.push(["w", `Skipping invalid interviewer: ${badExtra.join(", ")}`]);
+    if (text("ivStatus") && !normIvStatus(cell("ivStatus"))) issues.push(["w", `Interview status "${text("ivStatus")}" not recognised — treated as Scheduled`]);
+    out.push({ line: i + 1, name: name || email, email: email.toLowerCase(), role: text("role"), round: text("round"), dur,
+      interviewers: extra.filter(e => EMAIL_RE.test(e)).map(e => e.toLowerCase()),
+      phone: text("phone"), expected: text("expected"), current: text("current"), notice: text("notice"), availability: text("availability"), source: text("source"), note: text("note"),
+      ivStatus: normIvStatus(cell("ivStatus")) || "Scheduled", ivStatusRaw: text("ivStatus"),
+      y: dp?.y, m: dp?.m, d: dp?.d, min, issues, state: "pending" });
+  }
+  // duplicates within the sheet
+  const seen = new Map();
+  out.forEach(r => { if (r.min == null || !r.y) return; const k = `${r.email}|${r.y}-${r.m}-${r.d}|${r.min}`; if (seen.has(k)) r.issues.push(["e", `Duplicate of row ${seen.get(k)}`]); else seen.set(k, r.line); });
+  return { rows: out };
+}
+
+/* wall-clock arithmetic */
+function wall(r, addMin = 0){ const t = new Date(Date.UTC(r.y, r.m - 1, r.d, 0, r.min + addMin)); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), h: t.getUTCHours(), mi: t.getUTCMinutes() }; }
+const naive = w => `${w.y}-${pad(w.m)}-${pad(w.d)}T${pad(w.h)}:${pad(w.mi)}:00`;
+function zoneOffsetMin(w, tz){ // offset (minutes) of tz at that wall time
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const at = ms => { const p = Object.fromEntries(fmt.formatToParts(new Date(ms)).map(x => [x.type, x.value])); return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - ms) / 60000; };
+  const guess = Date.UTC(w.y, w.m - 1, w.d, w.h, w.mi);
+  const o1 = at(guess); const o2 = at(guess - o1 * 60000); return o2;
+}
+function instantMs(w, tz){ return Date.UTC(w.y, w.m - 1, w.d, w.h, w.mi) - zoneOffsetMin(w, tz) * 60000; }
+function partsInTz(ms, tz){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour % 24, mi: +p.minute };
+}
+const ymdOf = p => `${p.y}-${pad(p.m)}-${pad(p.d)}`;
+const todayYMD = () => ymdOf(partsInTz(Date.now(), S.tz));
+function addDays(ymd, n){ const [y, m, d] = ymd.split("-").map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`; }
+function fmtDT(iso, tz = S.tz){
+  const d = new Date(iso); if (!iso || isNaN(d)) return "—";
+  return d.toLocaleString(undefined, { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+function fmtDate(ymd){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || ""); if (!m) return ymd ? esc(ymd) : "—";
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
+function fmtAgo(iso){
+  const t = Date.parse(iso); if (isNaN(t)) return "";
+  const s = (Date.now() - t) / 1000;
+  if (s < 60) return "just now"; if (s < 3600) return `${Math.floor(s / 60)} min ago`; if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+  return new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* ============ State ============ */
+const S = {
+  clientId: store.get("clientId", DEFAULT_CLIENT_ID),
+  sheetId: store.get("sheetId", DEFAULT_SHEET_ID),
+  token: null, tokenExp: 0, tokenClient: null, pendingToken: null, email: "",
+  calendars: [], calId: store.get("calId", ""), tz: store.get("tz", Intl.DateTimeFormat().resolvedOptions().timeZone),
+  db: null, dbErr: "", loading: false, loadedAt: 0, sheetTitle: "", resp: {},
+  view: "dashboard",
+  f: { q: "", pos: "", stage: "active", archived: false },   // candidate filters
+  ivf: "upcoming", ivPos: "", ivReply: "", events: null, linkable: [],                                // interview filters
+  cid: null, base: null, ivid: null, ivCand: null, pid: null, // open dialogs
+  rows: [], sample: true, file: "", syncing: false
+};
+const rows = t => S.db?.[t]?.rows || [];
+const P = id => rows("Positions").find(x => x.id === id);
+const C = id => rows("Candidates").find(x => x.id === id);
+const I = id => rows("Interviews").find(x => x.id === id);
+const ivStart = iv => Date.parse(iv.start);
+const ivEnd = iv => ivStart(iv) + (+iv.durationMin || 30) * 60000;
+const posTitle = id => P(id)?.title || "";
+
+/* ============ Google auth ============ */
+// The access token is kept for this browser tab (sessionStorage), so refreshing the page doesn't sign you out.
+// Google tokens for browser apps last about an hour; after that the remembered account is renewed without the account chooser.
+const session = {
+  get(){ try { const a = JSON.parse(sessionStorage.getItem("idesk:auth") || "null"); return a && a.client === S.clientId && a.exp > Date.now() + 60000 ? a : null; } catch { return null; } },
+  save(){ try { if (S.token) sessionStorage.setItem("idesk:auth", JSON.stringify({ token: S.token, exp: S.tokenExp, email: S.email, client: S.clientId })); } catch {} },
+  clear(){ try { sessionStorage.removeItem("idesk:auth"); } catch {} }
+};
+const rememberedAccount = () => store.get("account", "");
+function gisReady(){ return !!(window.google && google.accounts && google.accounts.oauth2); }
+function initTokenClient(){
+  if (!S.clientId || !gisReady()) return false;
+  S.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: S.clientId, scope: SCOPES.join(" "),
+    callback: resp => {
+      const p = S.pendingToken; S.pendingToken = null;
+      if (resp.error) { p?.reject(new Error(resp.error_description || resp.error)); return; }
+      if (!google.accounts.oauth2.hasGrantedAllScopes(resp, ...SCOPES)) { p?.reject(new Error("Please tick every permission Google asks for — the desk needs Calendar and Sheets access.")); return; }
+      S.token = resp.access_token; S.tokenExp = Date.now() + (resp.expires_in - 60) * 1000; session.save(); p?.resolve(S.token);
+    },
+    error_callback: err => { const p = S.pendingToken; S.pendingToken = null; p?.reject(new Error(err.type === "popup_closed" ? "Sign-in window was closed" : (err.message || "Sign-in failed"))); }
+  });
+  return true;
+}
+// The GIS script loads async; wait briefly (short enough to keep the click's popup permission) instead of failing on the first try.
+async function waitForGis(ms = 4000){
+  for (const end = Date.now() + ms; !gisReady() && !window.gisBlocked && Date.now() < end;) await sleep(100);
+  return gisReady();
+}
+const GIS_BLOCKED = "Google's sign-in script (accounts.google.com) was blocked. Turn off ad/tracker blocking for this page (uBlock, Brave Shields, Safari content blockers, Firefox strict mode), then reload.";
+async function getToken(interactive, prompt = ""){
+  if (S.token && Date.now() < S.tokenExp) return S.token;
+  if (!S.clientId) throw new Error("Add your OAuth client ID in Settings first.");
+  if (!S.tokenClient && !(await waitForGis() && initTokenClient())) throw new Error(window.gisBlocked ? GIS_BLOCKED : "Google sign-in didn't load. Check your connection or ad blocker, then reload the page.");
+  // hint = the remembered account, so Google renews it without asking which account to use
+  const hint = prompt === "select_account" ? undefined : rememberedAccount() || undefined;
+  return new Promise((resolve, reject) => { S.pendingToken = { resolve, reject }; S.tokenClient.requestAccessToken({ prompt, hint }); });
+}
+
+function friendlyError(data, status){
+  const msg = data?.error?.message || `Google returned ${status}`;
+  if (/has not been used in project|is disabled|SERVICE_DISABLED/i.test(msg)) {
+    const api = /sheets/i.test(msg) ? "Google Sheets API" : /calendar/i.test(msg) ? "Google Calendar API" : /drive/i.test(msg) ? "Google Drive API" : "required API";
+    return `The ${api} isn't enabled in your Google Cloud project. Enable it under APIs & Services → Library, wait a minute, then try again.`;
+  }
+  if (/insufficient authentication scopes|insufficientPermissions/i.test(msg)) return "Google hasn't granted every permission the desk needs (Calendar, Sheets and Drive files). Press Sign out, then Connect Google again and tick every box Google shows.";
+  return msg;
+}
+
+async function gfetch(url, { method = "GET", body, query, tries = 3 } = {}){
+  let token = await getToken(true);
+  const u = new URL(url);
+  if (query) Object.entries(query).forEach(([k, v]) => { if (v != null) (Array.isArray(v) ? v : [v]).forEach(x => u.searchParams.append(k, x)); });
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(u, { method, headers: { Authorization: "Bearer " + token, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 401 && attempt === 1) { S.token = null; token = await getToken(true); continue; }
+    if ((res.status === 429 || res.status === 403 || res.status >= 500) && attempt < tries) {
+      const txt = await res.clone().text();
+      if (res.status !== 403 || /rateLimit|userRateLimit|quota/i.test(txt)) { await sleep(1000 * 2 ** attempt + Math.random() * 600); continue; }
+    }
+    if (res.status === 204) return null;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { const e = new Error(friendlyError(data, res.status)); e.status = res.status; throw e; }
+    return data;
+  }
+}
+const cal = (path, opts) => gfetch(CAL_API + path, opts);
+const sheets = (path = "", opts) => gfetch(`${SHEETS_API}/${encodeURIComponent(S.sheetId)}${path}`, opts);
+
+async function connect(){
+  if (!S.clientId) { go("settings"); toast("Add your OAuth client ID first."); return; }
+  try {
+    // first time (or after Sign out): Google's account chooser; otherwise straight back in as the remembered account
+    S.token = null; await getToken(true, rememberedAccount() ? "" : "select_account");
+    await loadCalendars();
+    renderAll();
+    if (S.sheetId) await openSheet();
+    else { go("settings"); toast("Signed in. Now create a hiring sheet, or link the one your clinic uses."); }
+    loadResponses();
+  } catch (e) { toast(e.message); }
+}
+// After a refresh: reuse this tab's Google session (if it hasn't expired) and reload everything without any clicks.
+async function resumeSession(){
+  const a = session.get(); if (!a) return;
+  S.token = a.token; S.tokenExp = a.exp; S.email = a.email; renderAll();
+  try {
+    await loadCalendars(); renderAll();
+    if (S.sheetId) await openSheet();
+    loadResponses();
+  } catch (e) { S.token = null; S.tokenExp = 0; session.clear(); renderAll(); }
+}
+function signOut(){
+  if (S.token && gisReady()) google.accounts.oauth2.revoke(S.token, () => {});
+  S.token = null; S.tokenExp = 0; S.calendars = []; S.db = null; S.events = null; S.linkable = []; S.email = "";
+  session.clear(); store.set("account", "");   // next Connect shows the account chooser
+  ["candDlg", "ivDlg", "posDlg"].forEach(id => $(id).open && $(id).close());
+  renderCalendars(); renderAll();
+}
+
+async function loadCalendars(){
+  const data = await cal("/users/me/calendarList", { query: { minAccessRole: "writer", maxResults: 250 } });
+  S.calendars = (data.items || []).sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0) || (a.summaryOverride || a.summary).localeCompare(b.summaryOverride || b.summary));
+  S.email = S.calendars.find(c => c.primary)?.id || "";
+  if (S.email) { store.set("account", S.email); session.save(); }
+  if (!S.calendars.find(c => c.id === S.calId)) S.calId = (S.calendars.find(c => c.primary) || S.calendars[0] || {}).id || "";
+  store.set("calId", S.calId);
+  renderCalendars();
+}
+
+/* ============ Hiring sheet (the database) ============ */
+const keyOf = (tab, h) => { const n = normH(h); if (!n) return null; const f = SCHEMA[tab].find(([k, l]) => normH(l) === n || normH(k) === n); return f ? f[0] : null; };
+const colOf = (tab, header, key) => header.findIndex(h => keyOf(tab, h) === key);
+
+function parseTab(tab, vals){
+  const header = (vals[0] || []).map(v => String(v ?? ""));
+  const keys = header.map(h => keyOf(tab, h));
+  const list = vals.slice(1).map(v => {
+    const o = {}; SCHEMA[tab].forEach(([k]) => o[k] = "");
+    keys.forEach((k, c) => { if (k) o[k] = v[c] == null ? "" : String(v[c]); });
+    return o;
+  }).filter(o => o.id);
+  return { header, rows: list };
+}
+
+// Creates any missing tabs/columns, then loads every record.
+async function ensureStructure(){
+  const meta = await sheets("", { query: { fields: "properties.title,sheets.properties.title" } });
+  S.sheetTitle = meta.properties?.title || "Hiring sheet";
+  S.sheetTabs = (meta.sheets || []).map(x => x.properties.title);
+  const have = new Set((meta.sheets || []).map(s => s.properties.title));
+  const missing = TABS.filter(t => !have.has(t));
+  if (missing.length) await sheets(":batchUpdate", { method: "POST", body: { requests: missing.map(t => ({ addSheet: { properties: { title: t, gridProperties: { frozenRowCount: 1 } } } })) } });
+  const data = await sheets("/values:batchGet", { query: { ranges: TABS } });
+  const fix = [], next = {};
+  TABS.forEach((t, i) => {
+    const vals = data.valueRanges?.[i]?.values || [];
+    let header = (vals[0] || []).map(v => String(v ?? ""));
+    const add = SCHEMA[t].filter(([k]) => !header.some(h => keyOf(t, h) === k)).map(([, l]) => l);
+    if (add.length) { header = header.concat(add); fix.push({ range: `${t}!A1`, values: [header] }); }
+    next[t] = parseTab(t, [header, ...vals.slice(1)]);
+  });
+  if (fix.length) await sheets("/values:batchUpdate", { method: "POST", body: { valueInputOption: "RAW", data: fix } });
+  S.db = next; S.loadedAt = Date.now();
+}
+
+async function openSheet(){
+  S.loading = true; S.dbErr = ""; renderAll();
+  try { await ensureStructure(); }
+  catch (e) {
+    S.db = null;
+    S.dbErr = e.status === 404 ? "That hiring sheet wasn't found. Check the link, or create a new one in Settings."
+      // 403 also covers "API not enabled" and missing permissions, so only blame sharing when Google says so
+      : e.status === 403 && /caller does not have permission/i.test(e.message) ? `Your Google account (${S.email || "this account"}) can't edit that sheet. Ask its owner to share it with you as Editor.`
+      : e.message;
+  }
+  S.loading = false; renderAll();
+}
+
+async function refresh(){
+  if (!S.token || !S.sheetId) return;
+  await openSheet(); loadResponses();
+}
+
+async function createSheet(){
+  const out = await gfetch(SHEETS_API, { method: "POST", body: {
+    properties: { title: `${orgName() || "Hiring"} — Hiring records` },
+    sheets: TABS.map(t => ({ properties: { title: t, gridProperties: { frozenRowCount: 1 } } })) } });
+  setSheet(out.spreadsheetId);
+  await sheets(":batchUpdate", { method: "POST", body: { requests: (out.sheets || []).map(s => ({ repeatCell: {
+    range: { sheetId: s.properties.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { textFormat: { bold: true } } }, fields: "userEnteredFormat.textFormat.bold" } })) } }).catch(() => {});
+  await openSheet();
+  if (S.db) toast("Hiring sheet created in your Google Drive. Share it with colleagues as Editor.");
+}
+function setSheet(id){ S.sheetId = id; store.set("sheetId", id); S.db = null; S.dbErr = ""; }
+const sheetUrl = () => `https://docs.google.com/spreadsheets/d/${S.sheetId}/edit`;
+
+/* Writes a batch of changes. Inserts: {tab, rec}. Updates: {tab, id, patch} — only the patched fields are written,
+   on top of the row as it is in the sheet right now, so colleagues' edits to other fields aren't overwritten. */
+async function commit(ops){
+  ops = ops.filter(Boolean); if (!ops.length) return;
+  const now = nowIso();
+  const has = (t, k) => SCHEMA[t].some(([x]) => x === k);
+  const ins = ops.filter(o => o.rec), ups = ops.filter(o => o.patch);
+  ins.forEach(o => { if (has(o.tab, "createdAt")) o.rec.createdAt ||= now; if (has(o.tab, "updatedAt")) o.rec.updatedAt = now; });
+  ups.forEach(o => { if (has(o.tab, "updatedAt")) o.patch.updatedAt = now; });
+  if (ups.length) {
+    const tabs = [...new Set(ups.map(o => o.tab))];
+    const fresh = await sheets("/values:batchGet", { query: { ranges: tabs } });
+    const vals = Object.fromEntries(tabs.map((t, i) => [t, fresh.valueRanges?.[i]?.values || []]));
+    const data = new Map();
+    for (const o of ups) {
+      const v = vals[o.tab], header = (v[0] || []).map(String), idc = colOf(o.tab, header, "id");
+      const i = v.findIndex((r, j) => j > 0 && String(r[idc] ?? "") === o.id);
+      if (idc < 0 || i < 0) throw new Error("A record was removed from the sheet by someone else. Press Refresh and try again.");
+      const row = header.map((_, c) => v[i][c] ?? "");
+      for (const [k, val] of Object.entries(o.patch)) { const c = colOf(o.tab, header, k); if (c >= 0) row[c] = val == null ? "" : String(val); }
+      v[i] = row;
+      data.set(`${o.tab}!A${i + 1}`, { range: `${o.tab}!A${i + 1}`, values: [row] });
+    }
+    await sheets("/values:batchUpdate", { method: "POST", body: { valueInputOption: "RAW", data: [...data.values()] } });
+    tabs.forEach(t => S.db[t] = parseTab(t, vals[t]));   // the fresh read doubles as a refresh of these tabs
+  }
+  for (const t of [...new Set(ins.map(o => o.tab))]) {
+    const header = S.db[t].header, list = ins.filter(o => o.tab === t);
+    const values = list.map(o => header.map(h => { const k = keyOf(t, h); return k && o.rec[k] != null ? String(o.rec[k]) : ""; }));
+    await sheets(`/values/${encodeURIComponent(t + "!A1")}:append`, { method: "POST", query: { valueInputOption: "RAW", insertDataOption: "INSERT_ROWS" }, body: { values } });
+    list.forEach(o => { const r = {}; SCHEMA[t].forEach(([k]) => r[k] = o.rec[k] == null ? "" : String(o.rec[k])); S.db[t].rows.push(r); });
+  }
+}
+const note = (candidateId, kind, text) => ({ tab: "Notes", rec: { id: uid("n"), candidateId, at: nowIso(), author: S.email, kind, text } });
+const stageOps = (c, to) => c.stage === to ? [] : [{ tab: "Candidates", id: c.id, patch: { stage: to } }, note(c.id, "stage", `Stage: ${c.stage || "—"} → ${to}`)];
+
+/* ============ Calendar events ============ */
+async function eventIdFor(r){ // deterministic -> re-importing the same row never double-books
+  const key = `${S.calId}|${r.email}|${r.y}-${r.m}-${r.d}|${r.min}|${S.tz}`;
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+  return "iv" + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 40);
+}
+function fill(tpl, r){ return tpl.replace(/\{name\}/g, r.name).replace(/\{(role|position)\}/g, r.role || "").replace(/\{round\}/g, r.round || "Interview").replace(/\{org\}/g, orgName())
+    .replace(/\]\s+-\s+/, "] ") /* no position -> "[Interview] Name/Org" */.replace(/\{duration\}/g, r.dur).replace(/\{email\}/g, r.email).replace(/\s+:\s*$/, "").trim(); }
+
+async function buildEvent(r, { meet = false, location = "", extra = {} } = {}){
+  const id = await eventIdFor(r);
+  const ev = {
+    id, summary: fill($("titleTpl").value || "[Interview] {position} - {name}/{org}", r), description: fill($("descTpl").value || "", r),
+    start: { dateTime: naive(wall(r)), timeZone: S.tz }, end: { dateTime: naive(wall(r, r.dur)), timeZone: S.tz },
+    attendees: [{ email: r.email, displayName: r.name }, ...r.interviewers.filter(e => e !== r.email).map(e => ({ email: e }))],
+    reminders: { useDefault: true },
+    extendedProperties: { private: { app: TAG, candidate: r.name, candidateEmail: r.email, ...extra } }
+  };
+  if (location) ev.location = location;
+  if (meet) ev.conferenceData = { createRequest: { requestId: id, conferenceSolutionKey: { type: "hangoutsMeet" } } };
+  return ev;
+}
+
+async function syncRow(r, opts = {}){
+  const ev = await buildEvent(r, opts);
+  const calId = encodeURIComponent(S.calId);
+  const q = { sendUpdates: "all", conferenceDataVersion: opts.meet ? 1 : 0 };
+  try {
+    const out = await cal(`/calendars/${calId}/events`, { method: "POST", body: ev, query: q });
+    return { state: "sent", link: out.htmlLink, meet: out.hangoutLink, eventId: ev.id };
+  } catch (e) {
+    if (e.status !== 409) throw e;
+    // Same interview was sent before: if it was cancelled, restore it; otherwise leave it alone.
+    const cur = await cal(`/calendars/${calId}/events/${ev.id}`);
+    if (cur.status === "cancelled") {
+      const out = await cal(`/calendars/${calId}/events/${ev.id}`, { method: "PUT", body: { ...ev, status: "confirmed" }, query: q });
+      return { state: "sent", link: out.htmlLink, meet: out.hangoutLink, eventId: ev.id };
+    }
+    return { state: "exists", link: cur.htmlLink, meet: cur.hangoutLink, eventId: ev.id };
+  }
+}
+
+// Candidate replies (accepted / declined) and Meet links come from the calendar events themselves.
+// We read every event in the window (not only ones the desk created) so invites sent another way can be linked too.
+const evStartMs = e => Date.parse(e.start?.dateTime || e.start?.date);
+const evEndMs = e => Date.parse(e.end?.dateTime || e.end?.date) || evStartMs(e);
+const evMeet = e => e?.hangoutLink || e?.conferenceData?.entryPoints?.find(p => p.entryPointType === "video")?.uri || "";
+const ivEmail = iv => (C(iv.candidateId)?.email || "").toLowerCase();
+async function loadResponses(){
+  if (!S.token) return;
+  S.loadingReplies = true; if (S.view === "interviews") renderInterviews();
+  const from = Date.now() - 45 * 864e5, to = Date.now() + 180 * 864e5;
+  const cals = [...new Set([S.calId, ...rows("Interviews").filter(i => i.calendarId).map(i => i.calendarId)])].filter(Boolean);
+  const events = {}, all = [];
+  for (const c of cals) {
+    let pageToken;
+    do {
+      try {
+        const data = await cal(`/calendars/${encodeURIComponent(c)}/events`, { query: { timeMin: new Date(from).toISOString(), timeMax: new Date(to).toISOString(), singleEvents: "true", maxResults: 2500, pageToken } });
+        (data.items || []).forEach(e => { e._cal = c; events[e.id] = e; all.push(e); });
+        pageToken = data.nextPageToken;
+      } catch { pageToken = null; }
+    } while (pageToken);
+  }
+  // Interviews recorded without an invite (e.g. imported): find the calendar event at the same time (±15 min) whose guest is
+  // the candidate — by email, or by name in the guest's address / the event title (catches invites sent to a misspelled address).
+  const taken = new Set(rows("Interviews").map(i => i.eventId).filter(Boolean));
+  const pairs = [];
+  rows("Interviews").filter(i => !i.eventId && i.status === "Scheduled").forEach(i => all.forEach(e => {
+    const score = matchScore(i, e); if (score) pairs.push({ iv: i, ev: e, score, gap: Math.abs(evStartMs(e) - ivStart(i)) });
+  }));
+  pairs.sort((a, b) => b.score - a.score || a.gap - b.gap);
+  const done = new Set(); S.linkable = [];
+  for (const p of pairs) {
+    if (done.has(p.iv.id) || taken.has(p.ev.id)) continue;
+    done.add(p.iv.id); taken.add(p.ev.id);
+    S.linkable.push({ ...p, to: (guestFor(p.iv, p.ev)?.email || "").toLowerCase(), how: ["", "name in the event title", "name in the guest's email", "same email"][p.score] });
+  }
+  S.events = events; S.repliesAt = Date.now(); S.loadingReplies = false; renderAll();
+}
+// Guests on an invite = everyone except the organiser, our own account, rooms and the interviewers.
+const isGuest = (a, iv) => !a.self && !a.organizer && !a.resource && !splitList(iv.interviewers).some(x => x.toLowerCase() === (a.email || "").toLowerCase());
+const nameTokens = n => String(n || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z]+/).filter(t => t.length >= 3);
+const nameHit = (iv, text) => { const t = String(text || "").toLowerCase(); return nameTokens(C(iv.candidateId)?.name || iv.candidateName).some(k => t.includes(k)); };
+function matchScore(iv, e){
+  if (e.status === "cancelled" || isNaN(evStartMs(e)) || Math.abs(evStartMs(e) - ivStart(iv)) > 15 * 60000) return 0;
+  const guests = (e.attendees || []).filter(a => isGuest(a, iv));
+  if (!guests.length) return 0;
+  if (ivEmail(iv) && guests.some(a => (a.email || "").toLowerCase() === ivEmail(iv))) return 3;
+  if (guests.some(a => nameHit(iv, `${a.email} ${a.displayName || ""}`))) return 2;
+  if (nameHit(iv, e.summary)) return 1;
+  return 0;
+}
+// the guest the invite went to for this candidate
+function guestFor(iv, e){
+  const guests = (e?.attendees || []).filter(a => isGuest(a, iv)), em = a => (a.email || "").toLowerCase();
+  const want = (iv.invitedEmail || "").toLowerCase(), cand = ivEmail(iv);
+  return guests.find(a => want && em(a) === want) || guests.find(a => cand && em(a) === cand)
+    || guests.find(a => nameHit(iv, `${a.email} ${a.displayName || ""}`)) || (guests.length === 1 ? guests[0] : null);
+}
+// reply for one interview: accepted / declined / tentative / needsAction, or a reason it can't be shown
+function ivReply(iv){
+  if (iv.status !== "Scheduled") return "none";
+  if (!iv.eventId) return "unlinked";
+  if (!S.events) return "unknown";
+  const e = S.events[iv.eventId];
+  if (!e) return "missing";
+  if (e.status === "cancelled") return "cancelled";
+  return guestFor(iv, e)?.responseStatus || "needsAction";
+}
+const ivSentTo = iv => ((S.events?.[iv.eventId] && guestFor(iv, S.events[iv.eventId])?.email) || iv.invitedEmail || "").toLowerCase();
+function sentToCell(iv){
+  if (!iv.eventId) return `<span class="dim">—</span>`;
+  const to = ivSentTo(iv), cand = ivEmail(iv), upcoming = iv.status === "Scheduled" && ivEnd(iv) > Date.now();
+  if (!to) return `<span class="dim">${S.events ? "No guest on the invite" : "—"}</span>`;
+  const out = `<span class="mono" style="font-size:.78rem;overflow-wrap:anywhere">${esc(to)}</span>`;
+  if (!cand || to === cand) return out;
+  return out + `<br>${pill("p-warn", "Not the candidate's email")}<br><span class="dim">Candidate: ${esc(cand)}</span>` +
+    (upcoming && S.events?.[iv.eventId] ? `<div class="rowacts" style="margin-top:4px"><button class="btn small" type="button" data-act="add-guest" data-id="${esc(iv.id)}">Also invite ${esc(cand)}</button></div>` : "");
+}
+const ivMeet = iv => evMeet(S.events?.[iv.eventId]) || iv.meetLink || "";
+function respPill(iv){
+  const r = ivReply(iv);
+  if (RESP[r]) return pill(...RESP[r]);
+  if (r === "unlinked") return `<span class="dim" title="No Google Calendar invite is linked to this interview, so the reply can't be shown">No invite linked</span>`;
+  if (r === "missing") return `<span class="dim" title="The linked event wasn't found in the calendar (deleted, or more than 6 months away)">Not in calendar</span>`;
+  if (r === "cancelled") return pill("p-bad", "Cancelled in calendar");
+  return `<span class="dim">—</span>`;
+}
+function meetCell(iv){
+  const url = ivMeet(iv), upcoming = iv.status === "Scheduled" && ivEnd(iv) > Date.now();
+  if (url) return `<div class="rowacts">${upcoming ? `<a class="btn small" href="${esc(url)}" target="_blank" rel="noopener">Join</a>` : ""}<button class="btn small" type="button" data-act="copy-meet" data-url="${esc(url)}">Copy link</button></div><span class="dim mono">${esc(url.replace(/^https?:\/\//, ""))}</span>`;
+  if (iv.eventId && upcoming) return `<button class="btn small" type="button" data-act="add-meet" data-id="${esc(iv.id)}">Add Meet link</button>`;
+  return `<span class="dim">—</span>`;
+}
+
+/* "Scheduled in Google Calendar": events this desk created, read live from the calendar */
+function renderSchedule(){
+  const cal = S.calendars.find(c => c.id === S.calId);
+  document.querySelectorAll("[data-sched-sub]").forEach(el => el.textContent = cal ? `Interviews created from this desk · upcoming in ${cal.summaryOverride || cal.summary}` : "Interviews created from this desk");
+  const empty = t => `<tr><td colspan="5" class="empty">${t}</td></tr>`;
+  let html;
+  if (!S.token) html = empty("Connect Google to see the interviews you've scheduled.");
+  else if (!S.events) html = empty(S.loadingReplies ? "Loading from Google Calendar…" : "Press Refresh to load from Google Calendar.");
+  else {
+    const since = Date.now() - 864e5;
+    const doneIds = new Set(rows("Interviews").filter(i => i.eventId && i.status !== "Scheduled").map(i => i.eventId));   // marked done / no-show / cancelled in the desk
+    const list = Object.values(S.events).filter(e => e.extendedProperties?.private?.app === TAG && e.status !== "cancelled" && evEndMs(e) >= since && !doneIds.has(e.id)).sort((a, b) => evStartMs(a) - evStartMs(b));
+    html = !list.length ? empty("Nothing upcoming yet. Interviews you schedule from the desk appear here.") : list.map(ev => {
+      const p = ev.extendedProperties.private, em = (p.candidateEmail || "").toLowerCase();
+      const guest = (ev.attendees || []).find(a => (a.email || "").toLowerCase() === em) || (ev.attendees || []).find(a => !a.self && !a.organizer) || {};
+      const [cls, label] = RESP[guest.responseStatus] || RESP.needsAction;
+      const o = { timeZone: S.tz }, s = new Date(evStartMs(ev)), e2 = new Date(evEndMs(ev));
+      const when = `${s.toLocaleDateString(undefined, { ...o, weekday: "short", day: "numeric", month: "short" })}<br>${s.toLocaleTimeString(undefined, { ...o, hour: "2-digit", minute: "2-digit" })}–${e2.toLocaleTimeString(undefined, { ...o, hour: "2-digit", minute: "2-digit" })}`;
+      const iv = rows("Interviews").find(i => i.eventId === ev.id), meet = evMeet(ev), confirming = S.confirmCancel === ev.id;
+      const name = p.candidate || guest.displayName || ev.summary;
+      return `<tr><td>${iv ? `<button class="btn link" type="button" data-act="cand" data-id="${esc(iv.candidateId)}" style="text-align:left"><strong>${esc(name)}</strong></button>` : `<strong>${esc(name)}</strong>`}<br><span class="dim">${esc(guest.email || "")}</span></td>
+        <td class="when">${when}</td>
+        <td>${pill(cls, label)}</td>
+        <td>${meet ? `<div class="rowacts"><a class="btn small" href="${esc(meet)}" target="_blank" rel="noopener">Join</a><button class="btn small" type="button" data-act="copy-meet" data-url="${esc(meet)}">Copy link</button></div>` : `<span class="dim">—</span>`}</td>
+        <td><div class="rowacts"><a class="btn small" href="${esc(ev.htmlLink)}" target="_blank" rel="noopener">Open</a>
+          ${confirming ? `<button class="btn small danger" type="button" data-act="sched-cancel-yes" data-id="${esc(ev.id)}">Cancel &amp; notify</button><button class="btn small" type="button" data-act="sched-cancel-no">Keep</button>`
+                       : `<button class="btn small" type="button" data-act="sched-cancel" data-id="${esc(ev.id)}">Cancel…</button>`}</div></td></tr>`;
+    }).join("");
+  }
+  document.querySelectorAll("[data-sched]").forEach(tb => tb.innerHTML = html);
+}
+async function cancelFromCalendar(evId){
+  const ev = S.events?.[evId]; if (!ev) return;
+  await cancelCalendarEvent(`/calendars/${encodeURIComponent(ev._cal || S.calId)}/events/${evId}`);
+  ev.status = "cancelled"; S.confirmCancel = null;
+  const iv = rows("Interviews").find(i => i.eventId === evId);
+  if (iv && iv.status === "Scheduled") await commit([{ tab: "Interviews", id: iv.id, patch: { status: "Cancelled" } }, note(iv.candidateId, "interview", `${iv.round}: Cancelled — candidate notified`)]);
+  const r = S.rows.find(x => x.eventId === evId); if (r) { r.state = "pending"; r.link = ""; }
+  toast("Interview cancelled and the candidate notified"); renderAll();
+}
+
+async function linkInvites(){
+  const list = S.linkable || []; if (!list.length) return;
+  await commit(list.flatMap(({ iv, ev }) => [
+    { tab: "Interviews", id: iv.id, patch: { calendarId: ev._cal, eventId: ev.id, eventLink: ev.htmlLink || "", meetLink: evMeet(ev), invitedEmail: (guestFor(iv, ev)?.email || "").toLowerCase() } },
+    note(iv.candidateId, "interview", `${iv.round} linked to the invite already in Google Calendar ("${ev.summary || "untitled"}", sent to ${guestFor(iv, ev)?.email || "unknown"})`)]));
+  toast(`Linked ${plural(list.length, "interview")} to their calendar invites`);
+  S.linkable = []; renderAll();
+}
+
+async function addGuest(id){
+  const iv = I(id), e = S.events?.[iv?.eventId], cand = ivEmail(iv || {});
+  if (!e || !cand) return;
+  if (!confirm(`Add ${cand} to ${iv.candidateName}'s invite? Google emails the invite to ${cand} (and an update to the others on it). The interview time doesn't change.`)) return;
+  const was = ivSentTo(iv);
+  const attendees = (e.attendees || []).map(a => ({ email: a.email, displayName: a.displayName, optional: a.optional, responseStatus: a.responseStatus }));
+  if (!attendees.some(a => (a.email || "").toLowerCase() === cand)) attendees.push({ email: cand, displayName: C(iv.candidateId)?.name || iv.candidateName });
+  const out = await cal(`/calendars/${encodeURIComponent(iv.calendarId || S.calId)}/events/${iv.eventId}`, { method: "PATCH", query: { sendUpdates: "all" }, body: { attendees } });
+  if (out) S.events[out.id] = { ...out, _cal: iv.calendarId || S.calId };
+  await commit([{ tab: "Interviews", id: iv.id, patch: { invitedEmail: cand } }, note(iv.candidateId, "interview", `Invite for ${iv.round} also sent to ${cand} (it had gone to ${was || "another address"})`)]);
+  toast(`Invite sent to ${cand}`); renderAll();
+}
+
+async function addMeet(id){
+  const iv = I(id); if (!iv?.eventId) return;
+  if (!confirm(`Add a Google Meet link to ${iv.candidateName}'s invite? Google will email the updated invite (with the link) to everyone on it.`)) return;
+  const out = await cal(`/calendars/${encodeURIComponent(iv.calendarId || S.calId)}/events/${iv.eventId}`, { method: "PATCH", query: { conferenceDataVersion: 1, sendUpdates: "all" },
+    body: { conferenceData: { createRequest: { requestId: uid("meet"), conferenceSolutionKey: { type: "hangoutsMeet" } } } } });
+  const url = evMeet(out);
+  if (S.events && out) S.events[out.id] = { ...out, _cal: iv.calendarId || S.calId };
+  await commit([{ tab: "Interviews", id: iv.id, patch: { meetLink: url, mode: "Video call" } }, note(iv.candidateId, "interview", `Google Meet link added to ${iv.round} — candidate notified`)]);
+  toast(url ? "Meet link added and the candidate notified" : "Requested a Meet link — press Refresh replies in a moment");
+  renderAll();
+}
+
+/* ============ Candidate drawer ============ */
+const CF = { name: "cName", email: "cEmail", phone: "cPhone", positionId: "cPos", source: "cSource", location: "cLoc", currentSalary: "cCur", expectedSalary: "cExp",
+  offeredSalary: "cOff", noticePeriod: "cNotice", availability: "cAvail", joiningDate: "cJoin", rating: "cRating", resumeLink: "cResume", tags: "cTags" };
+const CF_LABEL = { name: "name", email: "email", phone: "phone", positionId: "position", source: "source", location: "location", currentSalary: "current salary", expectedSalary: "expected salary",
+  offeredSalary: "offered salary", noticePeriod: "notice period", availability: "availability", joiningDate: "joining date", rating: "rating", resumeLink: "CV link", tags: "tags" };
+
+function posOptions(selected, { none = "— No position —", all = false } = {}){
+  const list = rows("Positions").slice().sort((a, b) => (a.status === "Closed") - (b.status === "Closed") || a.title.localeCompare(b.title));
+  return `<option value="">${esc(all ? "All positions" : none)}</option>` + list.map(p => `<option value="${esc(p.id)}"${p.id === selected ? " selected" : ""}>${esc(p.title)}${p.status && p.status !== "Open" ? ` (${esc(p.status)})` : ""}</option>`).join("");
+}
+
+function openCandidate(id){
+  const c = id ? C(id) : { stage: "Applied", positionId: S.f.pos || "" };
+  if (!c) return;
+  S.cid = id || null; S.base = { ...c }; S.cvOpen = false;
+  $("cPos").innerHTML = posOptions(c.positionId);
+  Object.entries(CF).forEach(([k, el]) => { if (k !== "positionId") $(el).value = c[k] || ""; });
+  $("cStage").innerHTML = STAGES.map(s => `<option${s === (c.stage || "Applied") ? " selected" : ""}>${s}</option>`).join("");
+  $("noteText").value = "";
+  renderDrawer();
+  if (!$("candDlg").open) $("candDlg").showModal();
+  if (!id) $("cName").focus();
+}
+
+function renderDrawer(){
+  const c = S.cid ? C(S.cid) : null;
+  $("cTitle").textContent = c ? c.name : "New candidate";
+  $("cSub").textContent = c ? [posTitle(c.positionId), c.email, c.archived ? "Archived" : ""].filter(Boolean).join(" · ") : "Only the name is required — add the rest as you learn it.";
+  $("cStageHint").textContent = c ? "Changing the stage saves straight away and is logged in the history." : "";
+  $("cMore").hidden = !c; $("cArchive").hidden = !c; $("cSchedTop").hidden = !c || !!c.archived; $("cArchive").textContent = c?.archived ? "Restore from archive" : "Archive";
+  $("cSave").textContent = c ? "Save changes" : "Add candidate";
+  const link = c?.resumeLink; $("cResumeLink").hidden = !/^https?:\/\//i.test(link || ""); if (link) $("cResumeLink").href = link;
+  if (!c) return;
+  renderCv(c);
+  const ivs = rows("Interviews").filter(i => i.candidateId === c.id).sort((a, b) => ivStart(b) - ivStart(a));
+  $("cIvs").innerHTML = ivs.length ? ivs.map(iv => `<div class="ivcard">
+      <div class="top"><strong>${esc(iv.round || "Interview")}</strong>${pill(IV_STATUS[iv.status], iv.status || "Scheduled")}${iv.status === "Scheduled" ? respPill(iv) : ""}${iv.recommendation ? pill(RECS[iv.recommendation], iv.recommendation) : ""}</div>
+      <div class="dim">${esc(fmtDT(iv.start, iv.timeZone || S.tz))} · ${esc(iv.durationMin)} min · ${esc(iv.mode || "")}${iv.location ? " · " + esc(iv.location) : ""}${iv.rating ? ` · rated ${esc(iv.rating)}/5` : ""}</div>
+      ${iv.interviewers ? `<div class="dim">With ${esc(iv.interviewers)}</div>` : ""}
+      ${iv.feedback ? `<p>${esc(iv.feedback)}</p>` : ""}
+      <div class="rowacts"><button class="btn small" type="button" data-act="edit-iv" data-id="${esc(iv.id)}">${iv.status === "Scheduled" && ivEnd(iv) < Date.now() ? "Record outcome" : "Edit / feedback"}</button>
+        ${ivMeet(iv) && iv.status === "Scheduled" ? `<a class="btn small" href="${esc(ivMeet(iv))}" target="_blank" rel="noopener">Join Meet</a><button class="btn small" type="button" data-act="copy-meet" data-url="${esc(ivMeet(iv))}">Copy Meet link</button>` : ""}
+        ${iv.eventLink ? `<a class="btn small" href="${esc(iv.eventLink)}" target="_blank" rel="noopener">Calendar</a>` : ""}</div>
+    </div>`).join("") : `<p class="hint">No interviews yet.</p>`;
+  const notes = rows("Notes").filter(n => n.candidateId === c.id).reverse().sort((a, b) => Date.parse(b.at) - Date.parse(a.at));   // newest first; same-moment notes in reverse write order
+  $("cNotes").innerHTML = notes.length ? notes.map(n => `<li class="k-${esc(n.kind)}"><div class="meta">${esc(fmtAgo(n.at))}${n.author ? " · " + esc(n.author.split("@")[0]) : ""}</div><p>${esc(n.text)}</p></li>`).join("") : `<li class="dim">No notes yet.</li>`;
+}
+
+async function saveCandidate(){
+  const v = {}; Object.entries(CF).forEach(([k, el]) => v[k] = $(el).value.trim());
+  v.email = v.email.toLowerCase();
+  if (!v.name) { toast("Enter the candidate's name."); return; }
+  if (v.email && !EMAIL_RE.test(v.email)) { toast(`"${v.email}" isn't a valid email.`); return; }
+  const dup = v.email && rows("Candidates").find(x => x.email === v.email && x.id !== S.cid);
+  if (dup) { toast(`${dup.name} already has this email — open their record instead.`); return; }
+  v.positionTitle = posTitle(v.positionId);
+  if (!S.cid) {
+    const rec = { id: uid("c"), ...v, stage: $("cStage").value, archived: "" };
+    await commit([{ tab: "Candidates", rec }, note(rec.id, "system", `Added at ${rec.stage}${rec.positionTitle ? ` for ${rec.positionTitle}` : ""}`)]);
+    S.cid = rec.id; S.base = { ...C(rec.id) }; toast("Candidate added");
+  } else {
+    const patch = {}; for (const k of Object.keys(v)) if (v[k] !== (S.base[k] || "")) patch[k] = v[k];
+    const changed = Object.keys(patch).filter(k => CF_LABEL[k]);
+    if (!changed.length) { toast("Nothing has changed."); return; }
+    await commit([{ tab: "Candidates", id: S.cid, patch }, note(S.cid, "system", `Updated ${changed.map(k => CF_LABEL[k]).join(", ")}`)]);
+    S.base = { ...C(S.cid) }; toast("Saved");
+  }
+  renderAll();
+}
+
+async function changeStage(){
+  const c = C(S.cid), to = $("cStage").value; if (!c || c.stage === to) return;
+  try {
+    const ops = stageOps(c, to);
+    if (to === "Joined" && !c.joiningDate) { ops[0].patch.joiningDate = todayYMD(); $("cJoin").value = todayYMD(); }
+    await commit(ops); S.base.stage = to;
+    toast(to === "Hired" && !c.joiningDate ? "Moved to Hired — add the joining date and offered salary below." : `Moved to ${to}`);
+    renderAll();
+  } catch (e) { $("cStage").value = c.stage; toast(e.message); }
+}
+
+/* ============ CVs (stored in Google Drive) ============ */
+const CV_MAX = 10 * 1024 * 1024;
+// Drive file id from a Drive / Docs link, so it can be previewed in Drive's own viewer
+function driveId(link){ const m = /\/(?:file|document|presentation|spreadsheets)\/d\/([\w-]{20,})/.exec(link || "") || /[?&]id=([\w-]{20,})/.exec(link || ""); return m ? m[1] : ""; }
+function cvPreviewUrl(link){
+  const id = driveId(link); if (!id) return "";
+  if (/docs\.google\.com\/document/.test(link)) return `https://docs.google.com/document/d/${id}/preview`;
+  return `https://drive.google.com/file/d/${id}/preview`;
+}
+function renderCv(c){
+  const link = c.resumeLink, busy = S.cvBusy === c.id;
+  $("cvName").textContent = link ? (c.resumeName || (driveId(link) ? "Saved in Google Drive" : "Linked CV")) : "";
+  $("cvActions").innerHTML = busy ? "" : link
+    ? `${cvPreviewUrl(link) ? `<button class="btn small" type="button" data-act="cv-toggle">${S.cvOpen ? "Hide preview" : "Preview"}</button>` : ""}<a class="btn small" href="${esc(link)}" target="_blank" rel="noopener">${driveId(link) ? "Open in Drive" : "Open link"}</a><button class="btn small" type="button" data-act="cv-pick">Replace</button><button class="btn small danger" type="button" data-act="cv-remove">Remove</button>`
+    : "";
+  const body = $("cvBody");
+  if (busy) { body.innerHTML = `<div class="banner info">Uploading the CV to Google Drive…</div>`; return; }
+  if (!link) { body.innerHTML = `<div class="drop" id="cvDrop" tabindex="0" role="button" data-act="cv-pick" aria-label="Attach a CV"><strong>Attach a CV</strong><span class="hint">Drop a file here or click to choose — PDF, Word or an image, up to 10 MB</span></div>`; return; }
+  const url = cvPreviewUrl(link);
+  if (!S.cvOpen) { body.innerHTML = ""; return; }
+  body.innerHTML = url ? `<iframe class="cvframe" src="${esc(url)}" title="CV preview for ${esc(c.name)}" allow="autoplay"></iframe><p class="hint">If the preview says you need access, open it in Drive — the CV's owner may need to share it with you.</p>`
+    : `<p class="hint">This CV is a link outside Google Drive, so it can't be previewed here. Use <b>Open link</b>.</p>`;
+}
+
+async function cvFolder(){
+  const key = "cvFolder:" + (S.email || "me");
+  let id = store.get(key, "");
+  if (id) { try { const f = await gfetch(`${DRIVE_API}/files/${id}`, { query: { fields: "id,trashed" } }); if (!f.trashed) return id; } catch {} }
+  const name = `${orgName() || "Interview Desk"} — CVs`;
+  const found = await gfetch(`${DRIVE_API}/files`, { query: { q: `name='${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`, fields: "files(id)", spaces: "drive" } });
+  id = found.files?.[0]?.id || (await gfetch(`${DRIVE_API}/files`, { method: "POST", query: { fields: "id" }, body: { name, mimeType: "application/vnd.google-apps.folder" } })).id;
+  store.set(key, id); return id;
+}
+async function driveUpload(file, name, parent){
+  const token = await getToken(true), boundary = "idesk" + Math.random().toString(36).slice(2);
+  const meta = { name, parents: parent ? [parent] : undefined };
+  const body = new Blob([`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n`, file, `\r\n--${boundary}--`]);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,mimeType", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": `multipart/related; boundary=${boundary}` }, body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error(friendlyError(data, res.status)); e.status = res.status; throw e; }
+  return data;
+}
+async function attachCv(file){
+  const c = C(S.cid); if (!c || !file) return;
+  if (file.size > CV_MAX) { toast("That file is over 10 MB. Save a smaller PDF and try again."); return; }
+  if (!/\.(pdf|docx?|odt|rtf|txt|png|jpe?g)$/i.test(file.name)) { toast("Attach a PDF, Word document or image."); return; }
+  S.cvBusy = c.id; renderCv(c);
+  try {
+    const ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0];
+    const up = await driveUpload(file, `${c.name} — CV${ext}`, await cvFolder());
+    const share = splitList($("cvShare").value).map(e => e.toLowerCase()).filter(e => EMAIL_RE.test(e) && e !== (S.email || "").toLowerCase());
+    let shareFailed = 0;
+    for (const email of share) {
+      try { await gfetch(`${DRIVE_API}/files/${up.id}/permissions`, { method: "POST", query: { sendNotificationEmail: "false" }, body: { role: "reader", type: "user", emailAddress: email } }); }
+      catch { shareFailed++; }
+    }
+    const replaced = c.resumeLink;
+    await commit([{ tab: "Candidates", id: c.id, patch: { resumeLink: up.webViewLink, resumeName: file.name } },
+      note(c.id, "system", `${replaced ? "CV replaced" : "CV attached"}: ${file.name}${share.length ? ` (shared with ${share.join(", ")})` : ""}`)]);
+    $("cResume").value = up.webViewLink; if (S.base) { S.base.resumeLink = up.webViewLink; S.base.resumeName = file.name; }
+    S.cvOpen = true;
+    toast(shareFailed ? `CV attached, but sharing with ${shareFailed} colleague(s) failed — share it from Drive.` : "CV attached");
+  } catch (e) { toast(e.message); }
+  finally { S.cvBusy = null; renderAll(); }
+}
+async function removeCv(){
+  const c = C(S.cid); if (!c?.resumeLink) return;
+  if (!confirm(`Remove the CV from ${c.name}'s record? The file itself stays in Google Drive.`)) return;
+  await commit([{ tab: "Candidates", id: c.id, patch: { resumeLink: "", resumeName: "" } }, note(c.id, "system", `CV removed from the record${c.resumeName ? ": " + c.resumeName : ""}`)]);
+  $("cResume").value = ""; if (S.base) { S.base.resumeLink = ""; S.base.resumeName = ""; }
+  S.cvOpen = false; renderAll();
+}
+
+/* ============ Interview dialog ============ */
+function openInterview(id, candId){
+  const iv = id ? I(id) : null; if (id && !iv) return;
+  S.ivid = id || null;
+  const cid = iv?.candidateId || candId || "";
+  const cands = rows("Candidates").filter(c => !c.archived || c.id === cid).sort((a, b) => a.name.localeCompare(b.name));
+  $("ivCand").innerHTML = `<option value="">Choose a candidate…</option>` + cands.map(c => `<option value="${esc(c.id)}"${c.id === cid ? " selected" : ""}>${esc(c.name)}${c.positionId ? " — " + esc(posTitle(c.positionId)) : ""}</option>`).join("");
+  $("ivCand").disabled = !!cid;
+  const tz = iv?.timeZone || S.tz;
+  if (iv) {
+    const p = partsInTz(ivStart(iv), tz);
+    $("ivDate").value = ymdOf(p); $("ivTime").value = `${pad(p.h)}:${pad(p.mi)}`;
+    $("ivRound").value = iv.round; $("ivDur").value = iv.durationMin || 30; $("ivMode").value = iv.mode || "In person"; $("ivLoc").value = iv.location; $("ivWho").value = iv.interviewers;
+  } else {
+    $("ivDate").value = addDays(todayYMD(), 1); $("ivTime").value = "10:00"; $("ivRound").value = "Interview"; $("ivDur").value = 30;
+    $("ivMode").value = "In person"; $("ivLoc").value = ""; $("ivWho").value = "";
+    $("ivInvite").checked = !!S.calId;
+  }
+  $("ivStatus").innerHTML = Object.keys(IV_STATUS).map(s => `<option${s === (iv?.status || "Scheduled") ? " selected" : ""}>${s}</option>`).join("");
+  $("ivRec").innerHTML = `<option value="">—</option>` + Object.keys(RECS).map(s => `<option${s === iv?.recommendation ? " selected" : ""}>${s}</option>`).join("");
+  $("ivRating").value = iv?.rating || ""; $("ivFeedback").value = iv?.feedback || "";
+  $("ivOutcome").hidden = !iv; $("ivInviteRow").hidden = !!iv;
+  $("ivCancelBtn").hidden = !(iv && iv.status === "Scheduled");
+  $("ivTitle").textContent = iv ? `${iv.round || "Interview"} · ${C(iv.candidateId)?.name || iv.candidateName}` : "Schedule interview";
+  $("ivSubt").textContent = iv ? (iv.eventId ? "Changing the date, time or length updates the calendar invite and notifies the candidate." : "No calendar invite was sent for this interview.") : "";
+  $("ivTzHint").textContent = `Times are in ${tz}.`;
+  $("ivSave").textContent = iv ? "Save" : "Schedule";
+  $("ivDlg").showModal();
+  if (iv && ivEnd(iv) < Date.now() && iv.status === "Scheduled") $("ivFeedback").focus();
+}
+
+async function saveInterview(){
+  const iv = S.ivid ? I(S.ivid) : null;
+  const cand = C($("ivCand").value); if (!cand) { toast("Choose a candidate."); return; }
+  const tz = iv?.timeZone || S.tz;
+  const [y, m, d] = $("ivDate").value.split("-").map(Number), [h, mi] = $("ivTime").value.split(":").map(Number);
+  if (!validYMD(y, m, d) || !(h >= 0 && mi >= 0)) { toast("Enter a valid date and time."); return; }
+  const dur = Math.round(+$("ivDur").value);
+  if (!(dur >= 5 && dur <= 720)) { toast("Duration should be between 5 and 720 minutes."); return; }
+  const who = splitList($("ivWho").value).map(e => e.toLowerCase()), badWho = who.filter(e => !EMAIL_RE.test(e));
+  if (badWho.length) { toast(`Not a valid interviewer email: ${badWho.join(", ")}`); return; }
+  const r0 = { y, m, d, min: h * 60 + mi };
+  const fields = { round: $("ivRound").value.trim() || "Interview", start: new Date(instantMs(wall(r0), tz)).toISOString(), durationMin: String(dur),
+    mode: $("ivMode").value, location: $("ivLoc").value.trim(), interviewers: who.join(", ") };
+
+  if (!iv) {
+    const rec = { id: uid("i"), candidateId: cand.id, candidateName: cand.name, positionId: cand.positionId, ...fields, timeZone: tz, status: "Scheduled", createdBy: S.email };
+    if ($("ivInvite").checked) {
+      if (!cand.email) { toast("Add the candidate's email before sending an invite (or untick the invite box)."); return; }
+      if (!S.calId) { toast("Choose a calendar in Settings first."); return; }
+      const r = { ...r0, name: cand.name, email: cand.email, role: posTitle(cand.positionId), round: rec.round, dur, interviewers: who };
+      const res = await syncRow(r, { meet: rec.mode === "Video call" && $("meetChk").checked, location: rec.mode === "In person" ? rec.location : "", extra: { interviewId: rec.id, candidateId: cand.id } });
+      Object.assign(rec, { calendarId: S.calId, eventId: res.eventId, eventLink: res.link || "", meetLink: res.meet || "", invitedEmail: cand.email });
+    }
+    const ops = [{ tab: "Interviews", rec }, note(cand.id, "interview", `${rec.round} scheduled for ${fmtDT(rec.start, tz)}${rec.eventId ? " — calendar invite sent" : ""}`)];
+    if (["", "Applied", "Screening"].includes(cand.stage)) ops.push(...stageOps(cand, "Interviewing"));
+    await commit(ops);
+    toast(rec.eventId ? "Interview scheduled and invite sent" : "Interview scheduled");
+  } else {
+    const out = { ...fields, status: $("ivStatus").value, rating: $("ivRating").value, recommendation: $("ivRec").value, feedback: $("ivFeedback").value.trim() };
+    if (out.status === "Scheduled" && (out.rating || out.recommendation || out.feedback) && ivEnd({ ...iv, ...out }) < Date.now()) out.status = "Completed";
+    const patch = {}; for (const k of Object.keys(out)) if (out[k] !== (iv[k] || "")) patch[k] = out[k];
+    if (patch.start && Math.abs(Date.parse(patch.start) - ivStart(iv)) < 60000) delete patch.start;   // the form only has minute precision
+    if (!Object.keys(patch).length) { $("ivDlg").close(); return; }
+    const ops = [{ tab: "Interviews", id: iv.id, patch }], calPath = iv.eventId ? `/calendars/${encodeURIComponent(iv.calendarId || S.calId)}/events/${iv.eventId}` : "";
+    const moved = patch.start || patch.durationMin;
+    if (calPath && iv.status === "Scheduled" && out.status === "Cancelled") await cancelCalendarEvent(calPath);
+    else if (calPath && moved && out.status === "Scheduled")
+      await cal(calPath, { method: "PATCH", query: { sendUpdates: "all" }, body: { start: { dateTime: naive(wall(r0)), timeZone: tz }, end: { dateTime: naive(wall(r0, dur)), timeZone: tz } } });
+    if (moved) ops.push(note(iv.candidateId, "interview", `${out.round} moved to ${fmtDT(out.start, tz)}${calPath ? " — candidate notified" : ""}`));
+    if (patch.status) ops.push(note(iv.candidateId, "interview", `${out.round}: ${out.status}${out.status === "Cancelled" && calPath ? " — candidate notified" : ""}`));
+    if (patch.feedback != null || patch.rating != null || patch.recommendation != null)
+      ops.push(note(iv.candidateId, "interview", `${out.round} feedback${out.recommendation ? " — " + out.recommendation : ""}${out.rating ? ` · ${out.rating}/5` : ""}${out.feedback ? "\n" + out.feedback : ""}`));
+    await commit(ops);
+    toast("Interview updated");
+  }
+  $("ivDlg").close(); renderAll();
+}
+async function cancelCalendarEvent(path){
+  try { await cal(path, { method: "DELETE", query: { sendUpdates: "all" } }); }
+  catch (e) { if (e.status !== 404 && e.status !== 410) throw e; }   // already gone from the calendar
+}
+async function cancelInterviewFromDialog(){
+  const iv = I(S.ivid); if (!iv) return;
+  if (!confirm(`Cancel ${iv.round || "this interview"} with ${iv.candidateName}?${iv.eventId ? "\nThe candidate will get a cancellation email." : ""}`)) return;
+  $("ivStatus").value = "Cancelled";
+  await saveInterview();
+}
+
+/* ============ Position dialog ============ */
+const PF = { title: "pTitle", department: "pDept", location: "pLoc", employmentType: "pType", openings: "pOpen", salaryRange: "pSalary", status: "pStatus", description: "pDesc" };
+function openPosition(id){
+  const p = id ? P(id) : { employmentType: "Full-time", openings: "1", status: "Open" }; if (!p) return;
+  S.pid = id || null;
+  $("pStatus").innerHTML = Object.keys(POS_STATUS).map(s => `<option>${s}</option>`).join("");
+  Object.entries(PF).forEach(([k, el]) => $(el).value = p[k] || "");
+  if (!$("pType").value) $("pType").value = "Full-time";
+  if (!$("pStatus").value) $("pStatus").value = "Open";
+  $("pTitleH").textContent = id ? p.title : "Add position";
+  $("pSave").textContent = id ? "Save" : "Add position";
+  $("pCands").hidden = !id;
+  $("posDlg").showModal();
+}
+async function savePosition(){
+  const v = {}; Object.entries(PF).forEach(([k, el]) => v[k] = $(el).value.trim());
+  if (!v.title) { toast("Enter a title."); return; }
+  const dup = rows("Positions").find(p => p.title.toLowerCase() === v.title.toLowerCase() && p.id !== S.pid);
+  if (dup) { toast(`There's already a position called "${dup.title}".`); return; }
+  if (!S.pid) { await commit([{ tab: "Positions", rec: { id: uid("p"), ...v } }]); toast("Position added"); }
+  else {
+    const p = P(S.pid), patch = {}; for (const k of Object.keys(v)) if (v[k] !== (p[k] || "")) patch[k] = v[k];
+    if (Object.keys(patch).length) {
+      const ops = [{ tab: "Positions", id: p.id, patch }];
+      if (patch.title) rows("Candidates").filter(c => c.positionId === p.id).forEach(c => ops.push({ tab: "Candidates", id: c.id, patch: { positionTitle: v.title } }));
+      await commit(ops); toast("Position saved");
+    }
+  }
+  $("posDlg").close(); renderAll();
+}
+
+/* ============ Bulk import (Excel -> candidates + interviews + invites) ============ */
+const isPast = r => r.y && r.min != null && instantMs(wall(r), S.tz) < Date.now();
+// Scheduled rows send an invite (never for past times — that only confuses the candidate).
+// Completed / No-show / Cancelled rows are recorded (or update the interview already in the desk) without sending anything.
+function rowAction(r){
+  if (S.sample || r.issues.some(i => i[0] === "e") || !(r.state === "pending" || r.state === "failed")) return "";
+  if ((r.ivStatus || "Scheduled") === "Scheduled") return isPast(r) ? "" : "invite";
+  return "record";
+}
+function syncable(){ return S.rows.filter(r => rowAction(r)); }
+
+async function syncAll(){
+  if (S.syncing) return;
+  const list = syncable(); if (!list.length) return;
+  try { await getToken(true); if (!S.calendars.length) await loadCalendars(); } catch (e) { toast(e.message); return; }
+  if (!S.calId) { toast("Choose a calendar in Settings first."); return; }
+  if (!S.db) { if (S.sheetId) await openSheet(); if (!S.db) { toast("Set up the hiring sheet first, so imported interviews are recorded."); go("settings"); return; } }
+  S.syncing = true; renderReview();
+  $("progress").hidden = false; let done = 0;
+  const ops = [], posBy = new Map(rows("Positions").map(p => [p.title.trim().toLowerCase(), p])), candBy = new Map(rows("Candidates").filter(c => c.email).map(c => [c.email, c]));
+  const patches = new Map(), newIds = new Set(), meet = $("meetChk").checked;
+  const notesSeen = new Set(rows("Notes").map(n => n.candidateId + "|" + n.text));
+  const patchFor = c => { if (!patches.has(c.id)) patches.set(c.id, {}); return patches.get(c.id); };
+  const plan = new Map(list.map(r => [r, rowAction(r)]));   // decide before rows change state
+  for (const r of list) {
+    r.state = "syncing"; r.error = ""; renderReview();
+    try {
+      let pos = null;
+      if (r.role) { const k = r.role.toLowerCase(); pos = posBy.get(k); if (!pos) { pos = { id: uid("p"), title: r.role, status: "Open", openings: "1", employmentType: "Full-time" }; posBy.set(k, pos); ops.push({ tab: "Positions", rec: pos }); } }
+      let cand = candBy.get(r.email);
+      const sheetVals = { phone: r.phone, expectedSalary: r.expected, currentSalary: r.current, noticePeriod: r.notice, availability: r.availability, source: r.source };
+      if (!cand) {
+        cand = { id: uid("c"), name: r.name, email: r.email, positionId: pos?.id || "", positionTitle: pos?.title || "", stage: "Interviewing", archived: "", ...sheetVals, source: r.source || "Excel import" };
+        candBy.set(r.email, cand); newIds.add(cand.id);
+        ops.push({ tab: "Candidates", rec: cand }, note(cand.id, "system", `Added from ${S.file}`));
+      } else if (!newIds.has(cand.id)) {   // fill in blanks only — never overwrite what's already recorded
+        const p = patchFor(cand);
+        Object.entries(sheetVals).forEach(([k, v]) => { if (v && !cand[k]) p[k] = v; });
+        if (pos && !cand.positionId) { p.positionId = pos.id; p.positionTitle = pos.title; }
+      }
+      if (r.note && !notesSeen.has(cand.id + "|" + r.note)) { notesSeen.add(cand.id + "|" + r.note); ops.push(note(cand.id, "note", r.note)); }
+      const round = r.round || "Interview";
+      const startMs = instantMs(wall(r), S.tz), start = new Date(startMs).toISOString();
+      const sameSlot = i => i.candidateId === cand.id && Math.abs(Date.parse(i.start) - startMs) < 60000;
+      const existing = rows("Interviews").find(sameSlot), pending = ops.find(o => o.tab === "Interviews" && o.rec && sameSlot(o.rec))?.rec;
+      if (plan.get(r) === "record") {
+        const st = r.ivStatus;
+        if (pending) { pending.status = st; r.state = "recorded"; }
+        else if (existing) {
+          if (existing.status !== st) {
+            if (st === "Cancelled" && existing.status === "Scheduled" && existing.eventId) await cancelCalendarEvent(`/calendars/${encodeURIComponent(existing.calendarId || S.calId)}/events/${existing.eventId}`);
+            ops.push({ tab: "Interviews", id: existing.id, patch: { status: st } }, note(cand.id, "interview", `${existing.round}: ${st} (from ${S.file})${st === "Cancelled" && existing.eventId && existing.status === "Scheduled" ? " — candidate notified" : ""}`));
+          }
+          r.state = existing.status === st ? "same" : "updated"; r.link = existing.eventLink || "";
+        } else {
+          ops.push({ tab: "Interviews", rec: { id: uid("i"), candidateId: cand.id, candidateName: cand.name, positionId: pos?.id || cand.positionId, round, start, durationMin: String(r.dur), timeZone: S.tz,
+            mode: meet ? "Video call" : "In person", interviewers: r.interviewers.join(", "), status: st, createdBy: S.email } },
+            note(cand.id, "interview", `${round} on ${fmtDT(start)} recorded as ${st} (from ${S.file}, no invite sent)`));
+          r.state = "recorded";
+        }
+        if (st === "Completed" && ["", "Applied", "Screening"].includes(cand.stage) && !newIds.has(cand.id) && !patchFor(cand).stage) { patchFor(cand).stage = "Interviewing"; ops.push(note(cand.id, "stage", `Stage: ${cand.stage || "—"} → Interviewing`)); }
+        done++; $("progressBar").style.width = (done / list.length * 100) + "%"; renderReview();
+        continue;
+      }
+      const ivId = uid("i");
+      const res = await syncRow({ ...r, role: pos?.title || posTitle(cand.positionId), round }, { meet, extra: { interviewId: ivId, candidateId: cand.id } });
+      Object.assign(r, res);
+      const known = rows("Interviews").some(x => x.eventId === res.eventId) || ops.some(o => o.rec?.eventId === res.eventId);
+      if (!known && existing && !existing.eventId) {
+        ops.push({ tab: "Interviews", id: existing.id, patch: { status: "Scheduled", calendarId: S.calId, eventId: res.eventId, eventLink: res.link || "", meetLink: res.meet || "", invitedEmail: r.email } },
+          note(cand.id, "interview", `${existing.round} on ${fmtDT(start)} — calendar invite sent (bulk import)`));
+      } else if (!known) {
+        ops.push({ tab: "Interviews", rec: { id: ivId, candidateId: cand.id, candidateName: cand.name, positionId: pos?.id || cand.positionId, round, start, durationMin: String(r.dur), timeZone: S.tz,
+          mode: meet ? "Video call" : "In person", interviewers: r.interviewers.join(", "), status: "Scheduled", calendarId: S.calId, eventId: res.eventId, eventLink: res.link || "", meetLink: res.meet || "", invitedEmail: r.email, createdBy: S.email } },
+          note(cand.id, "interview", `${round} scheduled for ${fmtDT(start)} — calendar invite sent (bulk import)`));
+        if (!newIds.has(cand.id) && ["", "Applied", "Screening"].includes(cand.stage) && !patchFor(cand).stage) { patchFor(cand).stage = "Interviewing"; ops.push(note(cand.id, "stage", `Stage: ${cand.stage || "—"} → Interviewing`)); }
+      }
+    } catch (e) { r.state = "failed"; r.error = e.message; }
+    done++; $("progressBar").style.width = (done / list.length * 100) + "%";
+    renderReview();
+    await sleep(150);
+  }
+  patches.forEach((patch, id) => { if (Object.keys(patch).length) ops.push({ tab: "Candidates", id, patch }); });
+  let saveErr = "";
+  try { await commit(ops); }
+  catch (e) { saveErr = e.message; list.forEach(r => { if (["sent", "exists", "recorded", "updated"].includes(r.state)) { r.state = "failed"; r.error = r.state === "sent" ? "Invite sent, but not saved to the hiring sheet" : "Not saved to the hiring sheet"; } }); }
+  S.syncing = false; setTimeout(() => { $("progress").hidden = true; $("progressBar").style.width = "0"; }, 600);
+  const cnt = st => list.filter(r => r.state === st).length;
+  const sent = cnt("sent"), failed = cnt("failed"), ex = cnt("exists"), recorded = cnt("recorded"), updated = cnt("updated");
+  if (saveErr) showSyncMsg("bad", `Saving to the hiring sheet failed: ${saveErr}. Press Sync again — it won't send duplicate invites.`);
+  else showSyncMsg(failed ? "warn" : "ok", [sent && `${plural(sent, "invite")} sent`, ex && `${ex} already on the calendar`, recorded && `${recorded} recorded by status`, updated && `${plural(updated, "interview")} updated`, cnt("same") && `${cnt("same")} already up to date`].filter(Boolean).join(", ")
+    + (failed ? `, ${failed} failed — see the rows below and press Sync again to retry.` : ". The hiring sheet is up to date."));
+  renderAll(); loadResponses();
+}
+function showSyncMsg(kind, text){ const m = $("syncMsg"); m.className = "banner " + kind; m.textContent = text; m.hidden = false; }
+
+async function importFile(file){
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array", cellDates: false, raw: false });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+    const res = rowsFromMatrix(matrix, $("dateFmt").value);
+    if (res.error) { showSyncMsg("bad", res.error); return; }
+    if (!res.rows.length) { showSyncMsg("bad", "The sheet has a header row but no interviews under it."); return; }
+    S.rows = res.rows; S.sample = false; S.file = file.name; $("syncMsg").hidden = true;
+    renderReview();
+    const bad = S.rows.filter(r => r.issues.some(i => i[0] === "e")).length;
+    toast(`Imported ${plural(S.rows.length, "row")}` + (bad ? ` — ${bad} need fixing` : ""));
+    if ($("autoSync").checked && S.token) syncAll();
+    else if ($("autoSync").checked) showSyncMsg("info", "Connect Google, then press Sync & send invites.");
+  } catch (e) { showSyncMsg("bad", "That file couldn't be read. Save it as .xlsx or .csv and try again."); }
+}
+
+function downloadTemplate(){
+  const today = new Date(); const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3);
+  const ws = XLSX.utils.aoa_to_sheet([
+    ["Name", "Email", "Date", "Time", "Duration", "Position", "Round", "Interviewers", "Phone", "Expected salary", "Notice period", "Availability", "Source", "Interview Status"],
+    ["Asha Mehta", "asha.mehta@example.com", d, "10:00 AM", 45, "Senior Physiotherapist", "Clinical assessment", "", "+91 98765 43210", "₹55,000 / month", "30 days", "Weekdays", "Referral", "Scheduled"],
+    ["Daniel Okafor", "daniel.okafor@example.com", d, "2:30 PM", 30, "Physiotherapy Assistant", "Screening call", "lead@yourclinic.com", "", "", "Immediate", "", "Indeed", "Completed"]
+  ], { cellDates: true, dateNF: "yyyy-mm-dd" });
+  ws["!cols"] = [20, 30, 12, 10, 10, 24, 20, 26, 18, 18, 14, 16, 12, 16].map(wch => ({ wch }));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Interviews");
+  XLSX.writeFile(wb, "interview-import-template.xlsx");
+}
+
+function loadSample(){
+  const base = new Date(); const day = off => { const t = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off); return { y: t.getFullYear(), m: t.getMonth() + 1, d: t.getDate() }; };
+  const blank = { round: "", phone: "", expected: "", current: "", notice: "", availability: "", source: "", note: "", ivStatus: "Scheduled" };
+  S.rows = [
+    { ...blank, note: "", ivStatus: "Scheduled", line: 2, name: "Asha Mehta", email: "asha.mehta@example.com", role: "Senior Physiotherapist", dur: 45, interviewers: [], ...day(2), min: 600, issues: [], state: "pending" },
+    { ...blank, line: 3, name: "Daniel Okafor", email: "daniel.okafor@example.com", role: "Physiotherapy Assistant", dur: 30, interviewers: ["lead@example.com"], ...day(2), min: 870, issues: [], state: "pending" },
+    { ...blank, line: 4, name: "Lin Wei", email: "lin.wei@example", role: "", dur: 60, interviewers: [], ...day(3), min: 660, issues: [["e", '"lin.wei@example" isn\'t a valid email']], state: "pending" }
+  ];
+  S.sample = true; S.file = "";
+}
+
+/* ============ Rendering ============ */
+const VIEWS = ["dashboard", "candidates", "positions", "interviews", "import", "settings"];
+const DATA_VIEWS = ["dashboard", "candidates", "positions", "interviews"];
+function go(view){
+  if (!VIEWS.includes(view)) view = "dashboard";
+  S.view = view; if (location.hash.slice(1) !== view) history.replaceState(null, "", "#" + view);
+  renderAll(); window.scrollTo(0, 0);
+  // replies change as candidates respond: re-check when opening the tracker if the last check is over a minute old
+  if ((view === "interviews" || view === "import") && S.token && Date.now() < S.tokenExp && S.db && !S.loadingReplies && Date.now() - (S.repliesAt || 0) > 60000) loadResponses();
+}
+
+function renderAll(){
+  renderWho(); renderTabs();
+  const gated = renderGate();
+  VIEWS.forEach(v => $("v-" + v).hidden = v !== S.view || (gated && DATA_VIEWS.includes(v)));
+  if (!gated) ({ dashboard: renderDashboard, candidates: renderCandidates, positions: renderPositions, interviews: renderInterviews })[S.view]?.();
+  if (S.view === "import") { renderReview(); renderRec(); }
+  if (S.view === "import" || S.view === "interviews") renderSchedule();
+  if (S.view === "settings") renderSettings();
+  if ($("candDlg").open) renderDrawer();
+}
+
+function renderWho(){
+  const on = !!S.token;
+  $("orgLabel").textContent = orgName() ? `${orgName()} · hiring` : "";
+  $("whoText").innerHTML = on ? `Signed in as <strong>${esc(S.email || "Google user")}</strong>` : "Not connected to Google";
+  $("connectBtn").hidden = on; $("signoutBtn").hidden = !on;
+  $("connectBtn").textContent = rememberedAccount() ? `Continue as ${rememberedAccount()}` : "Connect Google";
+  $("refreshBtn").hidden = !(on && S.sheetId); $("refreshBtn").disabled = S.loading; $("refreshBtn").textContent = S.loading ? "Loading…" : "Refresh";
+  $("sheetLink").hidden = !S.sheetId; if (S.sheetId) $("sheetLink").href = sheetUrl();
+}
+
+function renderTabs(){
+  document.querySelectorAll("#tabs button").forEach(b => { if (b.dataset.view === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  const ok = !!S.db;
+  $("nCand").textContent = ok ? rows("Candidates").filter(c => !c.archived && ACTIVE.includes(c.stage)).length : "";
+  $("nPos").textContent = ok ? rows("Positions").filter(p => p.status === "Open").length : "";
+  $("nIv").textContent = ok ? rows("Interviews").filter(i => i.status === "Scheduled" && ivEnd(i) > Date.now()).length : "";
+  ["nCand", "nPos", "nIv"].forEach(id => $(id).hidden = !ok);
+}
+
+function renderGate(){
+  const g = $("gate");
+  let m = null;
+  if (DATA_VIEWS.includes(S.view)) {
+    if (!S.clientId) m = ["Set up Google sign-in", "Add your OAuth client ID in Settings to get started. It's a one-time step — see the README.", `<button class="btn primary" type="button" data-act="go" data-view="settings">Open Settings</button>`];
+    else if (!S.token) m = rememberedAccount()
+      ? ["Welcome back", `Continue as ${rememberedAccount()} to load your hiring records — no password needed.`, `<button class="btn primary" type="button" data-act="connect">Continue as ${esc(rememberedAccount())}</button> <button class="btn" type="button" data-act="signout">Use another account</button>`]
+      : ["Connect Google", "Sign in with Google to load your positions, candidates and interviews from the hiring sheet.", `<button class="btn primary" type="button" data-act="connect">Connect Google</button>`];
+    else if (!S.sheetId) m = ["Set up your hiring sheet", "Create a new hiring sheet in your Google Drive, or link the one your clinic already uses.", `<button class="btn primary" type="button" data-act="go" data-view="settings">Set up the sheet</button>`];
+    else if (S.dbErr) m = ["Couldn't open the hiring sheet", S.dbErr, `<button class="btn primary" type="button" data-act="refresh">Try again</button> <button class="btn" type="button" data-act="go" data-view="settings">Settings</button>`];
+    else if (!S.db) m = ["Loading hiring records…", "Reading your hiring sheet.", ""];
+  }
+  g.hidden = !m;
+  if (m) g.innerHTML = `<h2>${esc(m[0])}</h2><p class="hint" style="font-size:.92rem">${esc(m[1])}</p>${m[2] ? `<div class="rowacts">${m[2]}</div>` : ""}`;
+  return !!m;
+}
+
+function liCand(c, right, when){
+  return `<li><span class="when">${when || ""}</span><button class="btn link who" type="button" data-act="cand" data-id="${esc(c.id)}" style="text-align:left"><strong>${esc(c.name)}</strong><span class="dim">${esc(posTitle(c.positionId) || "No position")}</span></button>${right || ""}</li>`;
+}
+
+function renderDashboard(){
+  const now = Date.now(), today = todayYMD();
+  const cands = rows("Candidates").filter(c => !c.archived), ivs = rows("Interviews").filter(i => i.status === "Scheduled");
+  const upcoming = ivs.filter(i => ivEnd(i) > now && ivStart(i) < now + 14 * 864e5).sort((a, b) => ivStart(a) - ivStart(b));
+  const waiting = ivs.filter(i => ivEnd(i) <= now).sort((a, b) => ivStart(b) - ivStart(a));
+  const joining = cands.filter(c => c.stage === "Offered" || (c.stage === "Hired" && (!c.joiningDate || c.joiningDate >= addDays(today, -7))))
+    .sort((a, b) => (a.stage === "Hired" ? 0 : 1) - (b.stage === "Hired" ? 0 : 1) || (a.joiningDate || "9").localeCompare(b.joiningDate || "9"));
+  const openPos = rows("Positions").filter(p => p.status === "Open");
+  const kpi = (n, label, act, extra = "") => `<button class="kpi" type="button" data-act="${act}" ${extra}><b>${n}</b><span>${esc(label)}</span></button>`;
+  $("kpis").innerHTML = [
+    kpi(openPos.length, `Open positions · ${openPos.reduce((s, p) => s + (+p.openings || 0), 0)} openings`, "go", `data-view="positions"`),
+    kpi(cands.filter(c => ACTIVE.includes(c.stage)).length, "Candidates in pipeline", "kpi-stage", `data-stage="active"`),
+    kpi(upcoming.filter(i => ivStart(i) < now + 7 * 864e5).length, "Interviews in the next 7 days", "kpi-iv", `data-f="upcoming"`),
+    kpi(waiting.length, "Interviews waiting for an outcome", "kpi-iv", `data-f="outcome"`),
+    kpi(cands.filter(c => c.stage === "Offered").length, "Offers out", "kpi-stage", `data-stage="Offered"`),
+    kpi(cands.filter(c => c.stage === "Hired" && c.joiningDate >= today && c.joiningDate <= addDays(today, 30)).length, "Joining in the next 30 days", "kpi-stage", `data-stage="Hired"`)
+  ].join("");
+  const ivLi = (iv, right) => { const c = C(iv.candidateId); return c ? liCand(c, right, `${esc(fmtDT(iv.start))}<br><span class="dim">${esc(iv.round)}</span>`) : ""; };
+  $("dUpcoming").innerHTML = upcoming.length ? upcoming.slice(0, 12).map(iv => ivLi(iv, respPill(iv))).join("") : `<li class="empty">No interviews in the next two weeks.</li>`;
+  $("dOutcome").innerHTML = waiting.length ? waiting.slice(0, 12).map(iv => ivLi(iv, `<button class="btn small" type="button" data-act="edit-iv" data-id="${esc(iv.id)}">Record outcome</button>`)).join("") : `<li class="empty">All caught up — every past interview has an outcome.</li>`;
+  $("dJoining").innerHTML = joining.length ? joining.slice(0, 12).map(c => liCand(c,
+    `${pill(STAGE_CLS[c.stage], c.stage)}${c.offeredSalary ? `<span class="dim">${esc(c.offeredSalary)}</span>` : ""}${c.stage === "Hired" && c.joiningDate && c.joiningDate <= today ? `<button class="btn small" type="button" data-act="joined" data-id="${esc(c.id)}">Mark joined</button>` : ""}`,
+    c.joiningDate ? `Joins ${fmtDate(c.joiningDate)}` : `<span class="dim">No joining date</span>`)).join("") : `<li class="empty">No offers out or hires waiting to join.</li>`;
+  const stg = ["Applied", "Screening", "Interviewing", "Shortlisted", "Offered", "Hired"];
+  const pl = rows("Positions").filter(p => p.status !== "Closed");
+  const unassigned = cands.some(c => !c.positionId && stg.includes(c.stage));
+  const rowsHtml = [...pl.map(p => [p.id, p.title, p.status]), ...(unassigned ? [["none", "No position", ""]] : [])].map(([id, title, st]) => {
+    const inPos = cands.filter(c => (id === "none" ? !c.positionId : c.positionId === id));
+    return `<tr><td><button class="btn link" type="button" data-act="pipe" data-pos="${esc(id)}" data-stage="active">${esc(title)}</button>${st && st !== "Open" ? ` <span class="dim">${esc(st)}</span>` : ""}</td>` +
+      stg.map(s => { const n = inPos.filter(c => c.stage === s).length; return `<td class="n">${n ? `<button class="btn link" type="button" data-act="pipe" data-pos="${esc(id)}" data-stage="${s}">${n}</button>` : `<span class="dim">0</span>`}</td>`; }).join("") + "</tr>";
+  }).join("");
+  $("dPipeline").innerHTML = rowsHtml ? `<div class="tablebox"><table class="compact"><thead><tr><th>Position</th>${stg.map(s => `<th class="n">${s}</th>`).join("")}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`
+    : `<div class="empty">No positions yet. <button class="btn link" type="button" data-act="new-pos">Add your first position</button></div>`;
+}
+
+function candMatches(c, ignoreStage){
+  const f = S.f, q = f.q.trim().toLowerCase();
+  if (!f.archived && c.archived) return false;
+  if (f.pos && (f.pos === "none" ? c.positionId : c.positionId !== f.pos)) return false;
+  if (!ignoreStage && !(f.stage === "all" || (f.stage === "active" ? ACTIVE.includes(c.stage) : c.stage === f.stage))) return false;
+  return !q || [c.name, c.email, c.phone, c.tags, c.source, c.location, posTitle(c.positionId)].join(" ").toLowerCase().includes(q);
+}
+function renderCandidates(){
+  const all = rows("Candidates"), base = all.filter(c => candMatches(c, true));
+  if (document.activeElement !== $("fPos")) { $("fPos").innerHTML = posOptions(S.f.pos, { all: true }) + `<option value="none"${S.f.pos === "none" ? " selected" : ""}>No position</option>`; }
+  $("fStages").innerHTML = [["active", "In pipeline", base.filter(c => ACTIVE.includes(c.stage)).length], ...STAGES.map(s => [s, s, base.filter(c => c.stage === s).length]), ["all", "All", base.length]]
+    .map(([k, l, n]) => `<button class="chip" type="button" data-act="stage-chip" data-stage="${k}" aria-pressed="${S.f.stage === k}">${esc(l)} <span>${n}</span></button>`).join("");
+  const list = all.filter(c => candMatches(c)).sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+  $("candSub").textContent = `${plural(list.length, "candidate")} shown`;
+  const now = Date.now();
+  const nextIv = c => rows("Interviews").filter(i => i.candidateId === c.id && i.status === "Scheduled" && ivEnd(i) > now).sort((a, b) => ivStart(a) - ivStart(b))[0];
+  $("candBody").innerHTML = list.length ? list.map(c => { const n = nextIv(c); return `<tr class="click${c.archived ? " archived" : ""}" data-act="cand" data-id="${esc(c.id)}" tabindex="0">
+      <td><strong>${esc(c.name)}</strong><br><span class="dim">${esc([c.email, c.phone].filter(Boolean).join(" · "))}</span>
+        <div class="rowacts" style="margin-top:6px">${c.archived ? "" : `<button class="btn small" type="button" data-act="sched-cand" data-id="${esc(c.id)}">Schedule interview</button>`}${c.resumeLink ? `<button class="btn small" type="button" data-act="view-cv" data-id="${esc(c.id)}">View CV</button>` : ""}</div></td>
+      <td>${esc(posTitle(c.positionId)) || `<span class="dim">—</span>`}</td>
+      <td>${pill(STAGE_CLS[c.stage], c.stage || "—")}${c.rating ? `<br><span class="dim">Rated ${esc(c.rating)}/5</span>` : ""}</td>
+      <td>${esc(c.expectedSalary) || `<span class="dim">—</span>`}</td>
+      <td>${esc(c.availability || c.noticePeriod) || `<span class="dim">—</span>`}</td>
+      <td class="when">${c.joiningDate ? fmtDate(c.joiningDate) : `<span class="dim">—</span>`}</td>
+      <td class="when">${n ? `${esc(fmtDT(n.start))}<br><span class="dim">${esc(n.round)}</span>` : `<span class="dim">—</span>`}</td></tr>`; }).join("")
+    : `<tr><td colspan="7" class="empty">${all.length ? "No candidates match these filters." : `No candidates yet. <button class="btn link" type="button" data-act="new-cand">Add one</button> or use Bulk import.`}</td></tr>`;
+}
+
+function renderPositions(){
+  const list = rows("Positions").slice().sort((a, b) => Object.keys(POS_STATUS).indexOf(a.status) - Object.keys(POS_STATUS).indexOf(b.status) || a.title.localeCompare(b.title));
+  const cands = rows("Candidates").filter(c => !c.archived);
+  $("posBody").innerHTML = list.length ? list.map(p => { const mine = cands.filter(c => c.positionId === p.id); return `<tr class="click" data-act="pos" data-id="${esc(p.id)}" tabindex="0">
+      <td><strong>${esc(p.title)}</strong><br><span class="dim">${esc([p.department, p.location, p.employmentType].filter(Boolean).join(" · "))}</span></td>
+      <td>${pill(POS_STATUS[p.status], p.status || "Open")}</td>
+      <td class="n">${esc(p.openings || "—")}</td>
+      <td>${esc(p.salaryRange) || `<span class="dim">—</span>`}</td>
+      <td class="n"><button class="btn link" type="button" data-act="pipe" data-pos="${esc(p.id)}" data-stage="active">${mine.filter(c => ACTIVE.includes(c.stage)).length}</button></td>
+      <td class="n">${mine.filter(c => c.stage === "Hired" || c.stage === "Joined").length}</td>
+      <td><button class="btn small" type="button" data-act="pos" data-id="${esc(p.id)}">Edit</button></td></tr>`; }).join("")
+    : `<tr><td colspan="7" class="empty">No positions yet. <button class="btn link" type="button" data-act="new-pos">Add your first position</button></td></tr>`;
+}
+
+const IV_FILTERS = [["upcoming", "Upcoming"], ["outcome", "Needs outcome"], ["done", "Done"], ["past", "Past"], ["all", "All"]];
+function renderInterviews(){
+  const now = Date.now(), all = rows("Interviews").filter(i => !S.ivPos || i.positionId === S.ivPos);
+  const test = { upcoming: i => i.status === "Scheduled" && ivEnd(i) > now, outcome: i => i.status === "Scheduled" && ivEnd(i) <= now, done: i => i.status === "Completed", past: i => ivEnd(i) <= now || i.status !== "Scheduled", all: () => true };
+  $("ivFilter").innerHTML = IV_FILTERS.map(([k, l]) => `<button class="chip" type="button" data-act="iv-chip" data-f="${k}" aria-pressed="${S.ivf === k}">${l} <span>${all.filter(test[k]).length}</span></button>`).join("");
+  if (document.activeElement !== $("ivPos")) $("ivPos").innerHTML = posOptions(S.ivPos, { all: true });
+  const list = all.filter(test[S.ivf]).filter(i => !S.ivReply || ivReply(i) === S.ivReply).sort((a, b) => S.ivf === "upcoming" ? ivStart(a) - ivStart(b) : ivStart(b) - ivStart(a));
+  $("ivSub").textContent = `Times in ${S.tz}` + (S.loadingReplies ? " · checking replies…" : S.repliesAt ? ` · replies checked ${fmtAgo(new Date(S.repliesAt).toISOString())}` : "");
+  $("replyBtn").disabled = !S.token || S.loadingReplies;
+  // reply summary for upcoming interviews
+  const up = all.filter(test.upcoming), cnt = k => up.filter(i => ivReply(i) === k).length;
+  const tiles = [["accepted", "Accepted"], ["tentative", "Maybe"], ["declined", "Declined"], ["needsAction", "No reply yet"], ["unlinked", "No invite linked"]];
+  $("replyKpis").innerHTML = tiles.map(([k, l]) => `<button class="kpi" type="button" data-act="reply-chip" data-r="${k}" aria-pressed="${S.ivReply === k}" style="${S.ivReply === k ? "border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)" : ""}"><b>${cnt(k)}</b><span>${l}</span></button>`).join("") +
+    `<button class="kpi" type="button" data-act="reply-chip" data-r="" aria-pressed="${!S.ivReply}"><b>${up.length}</b><span>Upcoming in total</span></button>`;
+  const lk = S.linkable || [];
+  $("linkBanner").innerHTML = lk.length ? `<div class="banner info" style="display:block"><div class="rowacts" style="justify-content:space-between"><span>Found <b>${plural(lk.length, "invite")}</b> already in your Google Calendar for interviews recorded without one. Linking shows each reply and Meet link — nothing is sent.</span><button class="btn small primary" type="button" data-act="link-invites">Link ${plural(lk.length, "invite")}</button></div>
+    <ul class="issues" style="margin-top:8px;font-size:.84rem;color:var(--fg)">${lk.slice(0, 25).map(x => `<li>${esc(x.iv.candidateName)} — ${esc(fmtDT(x.iv.start))} → invite sent to <span class="mono">${esc(x.to || "?")}</span> <span class="dim">(${esc(x.how)})</span>${x.to && ivEmail(x.iv) && x.to !== ivEmail(x.iv) ? ` ${pill("p-warn", "different from " + ivEmail(x.iv))}` : ""}</li>`).join("")}${lk.length > 25 ? `<li class="dim">…and ${lk.length - 25} more</li>` : ""}</ul></div>` : "";
+  $("ivBody").innerHTML = list.length ? list.map(iv => { const c = C(iv.candidateId); return `<tr>
+      <td class="when">${esc(fmtDT(iv.start))}<br><span class="dim">${esc(iv.durationMin)} min · ${esc(iv.mode)}</span></td>
+      <td><button class="btn link" type="button" data-act="cand" data-id="${esc(iv.candidateId)}" style="text-align:left"><strong>${esc(c?.name || iv.candidateName)}</strong></button><br><span class="dim">${esc(posTitle(iv.positionId) || "—")}</span></td>
+      <td>${esc(iv.round)}${iv.interviewers ? `<br><span class="dim">${esc(iv.interviewers)}</span>` : ""}</td>
+      <td>${pill(IV_STATUS[iv.status], iv.status)}</td>
+      <td style="max-width:220px">${sentToCell(iv)}</td>
+      <td>${respPill(iv)}</td>
+      <td>${meetCell(iv)}</td>
+      <td>${iv.recommendation ? pill(RECS[iv.recommendation], iv.recommendation) : ""}${iv.rating ? `<br><span class="dim">${esc(iv.rating)}/5</span>` : ""}${!iv.recommendation && !iv.rating ? `<span class="dim">—</span>` : ""}</td>
+      <td><div class="rowacts"><button class="btn small" type="button" data-act="edit-iv" data-id="${esc(iv.id)}">${test.outcome(iv) ? "Record outcome" : "Open"}</button>${iv.eventLink ? `<a class="btn small" href="${esc(iv.eventLink)}" target="_blank" rel="noopener">Calendar</a>` : ""}</div></td></tr>`; }).join("")
+    : `<tr><td colspan="9" class="empty">${S.ivReply ? "No upcoming interviews with this reply." : "No interviews here."}</td></tr>`;
+}
+
+function fmtWhen(r, tz){
+  const w = wall(r), e = wall(r, r.dur);
+  const dt = new Date(Date.UTC(w.y, w.m - 1, w.d));
+  const day = dt.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `${day}<br>${pad(w.h)}:${pad(w.mi)}–${pad(e.h)}:${pad(e.mi)} <span class="dim">${esc(tz)}</span>`;
+}
+const STATE_PILL = {
+  pending: ["p-ready", "Ready"], syncing: ["p-info", "Saving…"], sent: ["p-ok", "Invite sent"],
+  exists: ["p-muted", "Already scheduled"], failed: ["p-bad", "Failed"],
+  recorded: ["p-ok", "Recorded"], updated: ["p-ok", "Status updated"], same: ["p-muted", "Already up to date"]
+};
+
+/* ============ Import existing records (any candidate list -> desk records) ============ */
+const REC_FIELDS = [
+  ["name", "Full name", ["name","fullname","candidate","candidatename","applicant","applicantname","nameofcandidate","nameofapplicant"]],
+  ["firstName", "First name", ["firstname","fname","givenname"]],
+  ["lastName", "Last name", ["lastname","surname","lname","familyname"]],
+  ["email", "Email", ["email","emailaddress","emailid","mail","e-mail","candidateemail"]],
+  ["phone", "Phone", ["phone","phonenumber","phoneno","mobile","mobileno","mobilenumber","contact","contactno","contactnumber","cell","cellphone","whatsapp","tel","telephone"]],
+  ["position", "Position", ["position","role","jobtitle","job","appliedfor","positionappliedfor","post","designation","opening","vacancy"]],
+  ["stage", "Stage / status", ["stage","status","applicationstatus","candidatestatus","result","outcome","decision","hiringstatus"]],
+  ["source", "Source", ["source","referredby","referral","channel","howdidyouhear","howdidyouhearaboutus"]],
+  ["location", "Location", ["location","city","address","currentlocation","area","residence"]],
+  ["currentSalary", "Current salary", ["currentsalary","currentctc","presentsalary","currentpay","currentwage"]],
+  ["expectedSalary", "Expected salary", ["expectedsalary","salaryexpectation","salaryexpectations","expectedctc","expectedpay","expectedwage","expectation","expected","desiredsalary","salary","askingsalary"]],
+  ["offeredSalary", "Offered salary", ["offeredsalary","offeredctc","salaryoffered","offeramount","offer","offeredpay","offeredwage"]],
+  ["noticePeriod", "Notice period", ["noticeperiod","notice"]],
+  ["availability", "Availability", ["availability","available","availablefrom","availabledays","availabletimes","shifts","preferredshift"]],
+  ["joiningDate", "Joining date", ["joiningdate","dateofjoining","doj","startdate","joindate","joiningon","joined","joinedon"]],
+  ["rating", "Rating (1–5)", ["rating","score","overallrating"]],
+  ["resumeLink", "CV link", ["resume","cv","resumelink","cvlink","resumeurl","cvurl"]],
+  ["tags", "Tags / skills", ["tags","skills","keywords","specialisation","specialization","specialty","speciality","qualification","qualifications","experience","yearsofexperience","license","licence","registration"]],
+  ["note", "Notes", ["notes","note","comments","comment","remarks","remark","summary","details","additionalinfo","othernotes"]],
+  ["ivDate", "Interview date", ["interviewdate","dateofinterview","interviewon","date","scheduleddate","interviewscheduled","interviewday"]],
+  ["ivTime", "Interview time", ["interviewtime","time","slot","timeslot","starttime"]],
+  ["ivDuration", "Interview length", ["duration","length","durationmin","durationmins","interviewduration"]],
+  ["ivRound", "Interview round", ["round","interviewround","interviewtype","typeofinterview"]],
+  ["interviewers", "Interviewers", ["interviewer","interviewers","panel","interviewedby"]],
+  ["feedback", "Interview feedback", ["feedback","interviewfeedback","interviewnotes","evaluation","assessment"]],
+  ["ivStatus", "Interview status", ["interviewstatus","ivstatus","interviewdone","done","attended","interviewed"]]
+];
+const REC_LABEL = Object.fromEntries(REC_FIELDS.map(([k, l]) => [k, l]));
+const MULTI = new Set(["note", "tags"]);   // fields that may take several columns
+
+function guessField(h){ const n = normH(h); if (!n) return ""; const f = REC_FIELDS.find(([, , al]) => al.includes(n)); return f ? f[0] : ""; }
+function guessMap(header){
+  const map = {}, used = new Set();
+  header.forEach((h, i) => { const f = guessField(h); if (f && (MULTI.has(f) || !used.has(f))) { map[i] = f; used.add(f); } });
+  return map;
+}
+function normStage(s){
+  const t = String(s || "").trim().toLowerCase(); if (!t) return "";
+  const exact = STAGES.find(x => x.toLowerCase() === t); if (exact) return exact;
+  if (/join/.test(t)) return "Joined";
+  if (/reject|not selected|not suitable|unsuitable|declin|no hire|not a fit|regret/.test(t)) return "Rejected";
+  if (/withdr|not interested|backed out|no.?show|dropped|ghost/.test(t)) return "Withdrawn";
+  if (/hired|selected|offer accepted|accepted offer|confirmed/.test(t)) return "Hired";
+  if (/offer/.test(t)) return "Offered";
+  if (/shortlist|short list|short-list/.test(t)) return "Shortlisted";
+  if (/interview|scheduled|round|trial|demo/.test(t)) return "Interviewing";
+  if (/screen|phone call|called|contacted/.test(t)) return "Screening";
+  if (/new|applied|received|pending|application/.test(t)) return "Applied";
+  return "";
+}
+
+// fmt = values as people see them (keeps "₹45,000"), raw = numbers/serial dates for date & time columns
+function setRecData(source, fmt, raw){
+  const width = Math.max(0, ...fmt.slice(0, 50).map(r => r.length));
+  let hi = 0, best = 0;
+  for (let i = 0; i < Math.min(fmt.length, 10); i++) { const n = (fmt[i] || []).filter(h => guessField(h)).length; if (n > best) { best = n; hi = i; } }
+  const header = Array.from({ length: width }, (_, c) => String(fmt[hi]?.[c] ?? "").trim() || `Column ${String.fromCharCode(65 + (c % 26))}`);
+  const keep = [];
+  for (let i = hi + 1; i < fmt.length; i++) if ((fmt[i] || []).some(v => String(v ?? "").trim() !== "")) keep.push(i);
+  S.rec = { source, header, rows: keep.map(i => fmt[i] || []), raw: keep.map(i => raw[i] || fmt[i] || []), map: guessMap(header), result: null };
+  renderRec();
+}
+
+async function loadRecTab(){
+  const t = $("recTab").value; if (!t) return;
+  const rng = encodeURIComponent(`'${t.replace(/'/g, "''")}'`);
+  const [f, u] = await Promise.all([sheets(`/values/${rng}`), sheets(`/values/${rng}`, { query: { valueRenderOption: "UNFORMATTED_VALUE", dateTimeRenderOption: "SERIAL_NUMBER" } })]);
+  if (!(f.values || []).length) { toast(`The "${t}" tab is empty.`); return; }
+  setRecData(`the "${t}" tab`, f.values, u.values || []);
+}
+async function loadRecFile(file){
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    setRecData(file.name, XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" }), XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" }));
+  } catch { toast("That file couldn't be read. Save it as .xlsx or .csv and try again."); }
+}
+
+function mapRec(i){
+  const R = S.rec, v = {}, rv = {};
+  R.header.forEach((_, c) => { const f = R.map[c]; if (!f) return; const x = String(R.rows[i][c] ?? "").trim(); if (!x) return; (v[f] ||= []).push(x); (rv[f] ||= []).push(R.raw[i][c] ?? x); });
+  const txt = f => (v[f] || []).join(f === "note" ? "\n" : f === "tags" ? ", " : " ").trim();
+  const fmt = $("dateFmt").value;
+  const name = txt("name") || [txt("firstName"), txt("lastName")].filter(Boolean).join(" ");
+  const email = (txt("email").match(/[^\s@,;<>()]+@[^\s@,;<>()]+\.[a-z]{2,}/i) || [""])[0].toLowerCase();
+  const jd = rv.joiningDate ? parseDate(rv.joiningDate[0], fmt) : null;
+  const dp = rv.ivDate ? parseDate(rv.ivDate[0], fmt) : null;
+  let min = rv.ivTime ? parseTime(rv.ivTime[0]) : null; if (min == null && dp?.min != null) min = dp.min;
+  const problems = [];
+  if (!name && !email) problems.push("No name or email — skipped");
+  if (txt("email") && !email) problems.push(`"${txt("email")}" isn't a valid email`);
+  if (v.joiningDate && !jd) problems.push(`Joining date "${txt("joiningDate")}" couldn't be read`);
+  if (v.ivDate && !dp) problems.push(`Interview date "${txt("ivDate")}" couldn't be read`);
+  const stage = normStage(txt("stage"));
+  return { name: name || email, email, phone: txt("phone"), position: txt("position"), stage, stageRaw: txt("stage"),
+    source: txt("source"), location: txt("location"), currentSalary: txt("currentSalary"), expectedSalary: txt("expectedSalary"), offeredSalary: txt("offeredSalary"),
+    noticePeriod: txt("noticePeriod"), availability: txt("availability"), joiningDate: jd ? ymdOf(jd) : "", rating: (txt("rating").match(/[1-5]/) || [""])[0],
+    resumeLink: txt("resumeLink"), tags: txt("tags"), note: txt("note"), feedback: txt("feedback"),
+    iv: dp ? { y: dp.y, m: dp.m, d: dp.d, min: min ?? 600, timeKnown: min != null, dur: (rv.ivDuration ? parseDuration(rv.ivDuration[0]) : null) || 30,
+      round: txt("ivRound") || "Interview", interviewers: splitList(txt("interviewers")).filter(e => EMAIL_RE.test(e)).map(e => e.toLowerCase()), status: normIvStatus(txt("ivStatus")) } : null,
+    skip: !name && !email, problems };
+}
+
+function renderRec(){
+  const tabs = (S.sheetTabs || []).filter(t => !TABS.includes(t));
+  const sel = $("recTab");
+  sel.innerHTML = !S.db ? `<option value="">Connect the hiring sheet first</option>` : tabs.length ? tabs.map(t => `<option${S.rec?.source === `the "${t}" tab` ? " selected" : ""}>${esc(t)}</option>`).join("") : `<option value="">No other tabs in the hiring sheet</option>`;
+  sel.disabled = $("recTabBtn").disabled = !S.db || !tabs.length;
+  const R = S.rec, body = $("recBody");
+  if (!R) { body.innerHTML = `<p class="hint">Pick a tab of your hiring sheet (for example the list you kept before using the desk) and press <b>Load this tab</b>. You'll check which column is which before anything is imported.</p>`; return; }
+  const list = R.rows.map((_, i) => mapRec(i)), ok = list.filter(x => !x.skip);
+  const byEmail = new Map(rows("Candidates").filter(c => c.email).map(c => [c.email, c])), byName = new Map(rows("Candidates").map(c => [c.name.toLowerCase(), c]));
+  const existing = ok.filter(x => (x.email && byEmail.has(x.email)) || (!x.email && byName.has(x.name.toLowerCase()))).length;
+  const ivs = ok.filter(x => x.iv).length, future = ok.filter(x => x.iv && x.email && instantMs(wall(x.iv), S.tz) > Date.now()).length;
+  const unknownStage = [...new Set(ok.filter(x => x.stageRaw && !x.stage).map(x => x.stageRaw))];
+  const opts = sel => `<option value="">— Don't import —</option>` + REC_FIELDS.map(([k, l]) => `<option value="${k}"${k === sel ? " selected" : ""}>${esc(l)}</option>`).join("");
+  const sample = c => R.rows.map(r => String(r[c] ?? "").trim()).find(Boolean) || "";
+  const noName = !Object.values(R.map).some(f => f === "name" || f === "firstName" || f === "email");
+  body.innerHTML = `
+    ${R.result ? `<div class="banner ${R.result[0]}">${esc(R.result[1])}</div>` : ""}
+    <div class="banner info"><span>Loaded <b>${plural(R.rows.length, "row")}</b> from ${esc(R.source)}. Check what each column is, then import.</span></div>
+    <h3>Columns</h3>
+    <div class="fgrid">${R.header.map((h, c) => `<div class="field"><label for="recCol${c}" title="${esc(h)}">${esc(h)}</label><select id="recCol${c}" data-col="${c}">${opts(R.map[c] || "")}</select><span class="hint">${sample(c) ? "e.g. " + esc(sample(c).slice(0, 60)) : "empty"}</span></div>`).join("")}</div>
+    ${noName ? `<div class="banner warn">Choose which column holds the candidate's name (or email) — rows need one of them.</div>` : ""}
+    ${unknownStage.length ? `<p class="hint">Status values not recognised (imported as <b>Applied</b>, original kept in the notes): ${unknownStage.slice(0, 8).map(esc).join(", ")}${unknownStage.length > 8 ? "…" : ""}</p>` : ""}
+    <h3>Preview</h3>
+    <div class="tablebox"><table><thead><tr><th>Candidate</th><th>Position</th><th>Stage</th><th>Expected salary</th><th>Joining</th><th>Interview</th></tr></thead><tbody>
+      ${list.slice(0, 8).map(x => `<tr${x.skip ? ` class="is-sample"` : ""}><td><strong>${esc(x.name || "—")}</strong><br><span class="dim">${esc([x.email, x.phone].filter(Boolean).join(" · "))}</span>${x.problems.length ? `<ul class="issues">${x.problems.map(p => `<li class="w">${esc(p)}</li>`).join("")}</ul>` : ""}</td>
+        <td>${esc(x.position) || `<span class="dim">—</span>`}</td><td>${pill(STAGE_CLS[x.stage || "Applied"], x.stage || "Applied")}${x.stageRaw && x.stageRaw !== x.stage ? `<br><span class="dim">"${esc(x.stageRaw)}"</span>` : ""}</td>
+        <td>${esc(x.expectedSalary) || `<span class="dim">—</span>`}</td><td class="when">${x.joiningDate ? fmtDate(x.joiningDate) : `<span class="dim">—</span>`}</td>
+        <td class="when">${x.iv ? `${fmtDate(ymdOf(x.iv))}${x.iv.timeKnown ? ` ${pad(Math.floor(x.iv.min / 60))}:${pad(x.iv.min % 60)}` : ""}` : `<span class="dim">—</span>`}</td></tr>`).join("")}
+      ${list.length > 8 ? `<tr><td colspan="6" class="dim">…and ${list.length - 8} more</td></tr>` : ""}</tbody></table></div>
+    <div class="summary"><span><b>${ok.length - existing}</b>new candidates</span><span><b>${existing}</b>already in the desk (blank fields filled in)</span><span><b>${ivs}</b>interviews</span><span><b>${list.length - ok.length}</b>skipped</span></div>
+    ${future ? `<label class="check"><input type="checkbox" id="recInvite"> <span>Also send calendar invites for the ${plural(future, "interview")} dated in the future</span></label>` : ""}
+    <div class="rowacts"><button class="btn primary" type="button" data-act="rec-import" ${!ok.length || noName || !S.db ? "disabled" : ""}>Import ${plural(ok.length, "candidate")}</button><button class="btn" type="button" data-act="rec-clear">Cancel</button></div>`;
+}
+
+async function importRecords(){
+  const R = S.rec; if (!R || !S.db) return;
+  const src = R.source.replace(/^the "(.*)" tab$/, "$1");
+  const list = R.rows.map((_, i) => mapRec(i)).filter(x => !x.skip);
+  const sendInv = !!$("recInvite")?.checked;
+  if (sendInv && !S.calId) { toast("Choose a calendar in Settings first, or untick the invites box."); return; }
+  const ops = [], newIds = new Set(), patches = new Map(), count = { added: 0, updated: 0, iv: 0, inv: 0, failed: 0 };
+  const posBy = new Map(rows("Positions").map(p => [p.title.trim().toLowerCase(), p]));
+  const byEmail = new Map(rows("Candidates").filter(c => c.email).map(c => [c.email, c])), byName = new Map(rows("Candidates").map(c => [c.name.toLowerCase(), c]));
+  const notesSeen = new Set(rows("Notes").map(n => n.candidateId + "|" + n.text));
+  const FILL = ["phone", "source", "location", "currentSalary", "expectedSalary", "offeredSalary", "noticePeriod", "availability", "joiningDate", "rating", "resumeLink", "tags"];
+  for (const x of list) {
+    let pos = null;
+    if (x.position) { const k = x.position.toLowerCase(); pos = posBy.get(k); if (!pos) { pos = { id: uid("p"), title: x.position, status: "Open", openings: "1", employmentType: "Full-time" }; posBy.set(k, pos); ops.push({ tab: "Positions", rec: pos }); } }
+    let c = x.email ? byEmail.get(x.email) : byName.get(x.name.toLowerCase());
+    if (!c) {
+      c = { id: uid("c"), name: x.name, email: x.email, positionId: pos?.id || "", positionTitle: pos?.title || "", stage: x.stage || (x.iv ? "Interviewing" : "Applied"), archived: "",
+        ...Object.fromEntries(FILL.map(k => [k, x[k] || ""])), source: x.source || `Imported (${src})` };
+      if (x.email) byEmail.set(x.email, c); byName.set(x.name.toLowerCase(), c); newIds.add(c.id); count.added++;
+      ops.push({ tab: "Candidates", rec: c }, note(c.id, "system", `Imported from ${src}${x.stageRaw && x.stageRaw !== c.stage ? ` — status in the sheet was "${x.stageRaw}"` : ""}`));
+    } else if (!newIds.has(c.id)) {   // fill in blanks only — never overwrite what's already recorded
+      if (!patches.has(c.id)) patches.set(c.id, {});
+      const p = patches.get(c.id);
+      FILL.forEach(k => { if (x[k] && !c[k] && !p[k]) p[k] = x[k]; });
+      if (pos && !c.positionId && !p.positionId) { p.positionId = pos.id; p.positionTitle = pos.title; }
+    }
+    const addNote = (kind, text) => { const key = c.id + "|" + text; if (text && !notesSeen.has(key)) { notesSeen.add(key); ops.push(note(c.id, kind, text)); } };
+    addNote("note", x.note);
+    if (x.iv) {
+      const startMs = instantMs(wall(x.iv), S.tz), start = new Date(startMs).toISOString();
+      const same = i => i.candidateId === c.id && Math.abs(Date.parse(i.start) - startMs) < 60000;
+      const dup = [...rows("Interviews"), ...ops.filter(o => o.tab === "Interviews").map(o => o.rec)].some(same);
+      const known = rows("Interviews").find(same);
+      if (known && x.iv.status && known.status !== x.iv.status) {   // the sheet says the interview is done / no-show / cancelled: update it
+        ops.push({ tab: "Interviews", id: known.id, patch: { status: x.iv.status } }, note(c.id, "interview", `${known.round}: ${x.iv.status} (from ${src})`)); count.updatedIv = (count.updatedIv || 0) + 1;
+      }
+      if (!dup) {
+        const past = startMs < Date.now();
+        const rec = { id: uid("i"), candidateId: c.id, candidateName: c.name, positionId: pos?.id || c.positionId, round: x.iv.round, start, durationMin: String(x.iv.dur), timeZone: S.tz,
+          mode: "In person", interviewers: x.iv.interviewers.join(", "), status: x.iv.status || (past ? "Completed" : "Scheduled"), feedback: x.feedback, createdBy: S.email };
+        if (sendInv && !past && c.email && rec.status === "Scheduled") {
+          try {
+            const res = await syncRow({ ...x.iv, name: c.name, email: c.email, role: pos?.title || posTitle(c.positionId), round: rec.round, interviewers: x.iv.interviewers }, { meet: false, extra: { interviewId: rec.id, candidateId: c.id } });
+            Object.assign(rec, { calendarId: S.calId, eventId: res.eventId, eventLink: res.link || "", meetLink: res.meet || "", invitedEmail: c.email }); count.inv++;
+          } catch (e) { count.failed++; }
+        }
+        ops.push({ tab: "Interviews", rec }); count.iv++;
+        addNote("interview", `${rec.round} on ${fmtDT(start)}${x.iv.timeKnown ? "" : " (time not in the sheet)"} — imported${rec.eventId ? ", calendar invite sent" : ""}`);
+      } else if (x.feedback) addNote("interview", `Feedback (imported): ${x.feedback}`);
+    } else if (x.feedback) addNote("note", `Feedback: ${x.feedback}`);
+  }
+  patches.forEach((patch, id) => { if (Object.keys(patch).length) { ops.push({ tab: "Candidates", id, patch }); count.updated++; } });
+  await commit(ops);
+  R.result = [count.failed ? "warn" : "ok", `Imported: ${plural(count.added, "new candidate")}, ${count.updated} updated, ${plural(count.iv, "interview")} recorded` + (count.updatedIv ? `, ${count.updatedIv} interview statuses updated` : "") +
+    (count.inv ? `, ${plural(count.inv, "invite")} sent` : "") + (count.failed ? `, ${count.failed} invites failed` : "") + ". Your original tab is unchanged."];
+  renderAll(); toast(`Imported ${plural(count.added, "new candidate")}`);
+}
+
+function renderReview(){
+  const body = $("reviewBody");
+  $("sampleBanner").hidden = !S.sample;
+  $("fileName").textContent = S.sample ? "Example rows" : S.file;
+  if (!S.rows.length) { body.innerHTML = `<tr><td colspan="6" class="empty">No rows. Drop an Excel sheet on the left to start.</td></tr>`; }
+  else body.innerHTML = S.rows.map(r => {
+    const hasErr = r.issues.some(i => i[0] === "e");
+    const act = rowAction(r), st = r.ivStatus || "Scheduled";
+    const [cls, label] = hasErr ? ["p-bad", "Fix in sheet"] : S.sample ? ["p-muted", "Example"]
+      : r.state === "pending" && act === "record" ? ["p-info", `Will record as ${st}`]
+      : r.state === "pending" && !act ? ["p-muted", "Past — skipped"] : STATE_PILL[r.state];
+    const past = !hasErr && !act && r.state === "pending";
+    const issues = [...r.issues, ...(past ? [["w", "This time has passed — no invite will be sent. Set the interview status to Completed or No-show to record it."]] : []), ...(r.error ? [["e", r.error]] : [])];
+    const stSel = S.sample ? `<span class="dim">${esc(st)}</span>` : `<select data-ivrow="${S.rows.indexOf(r)}" aria-label="Interview status for ${esc(r.name)}" style="width:auto"${S.syncing ? " disabled" : ""}>${Object.keys(IV_STATUS).map(x => `<option${x === st ? " selected" : ""}>${x}</option>`).join("")}</select>${r.ivStatusRaw && r.ivStatusRaw !== st ? `<br><span class="dim">Sheet: "${esc(r.ivStatusRaw)}"</span>` : ""}`;
+    const when = r.y && r.min != null ? fmtWhen(r, S.tz) : `<span class="dim">—</span>`;
+    const link = r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">Open</a>` : "";
+    return `<tr class="${S.sample ? "is-sample" : ""}">
+      <td><strong>${esc(r.name)}</strong><br><span class="dim">${esc(r.email)}</span>${r.role ? `<br><span class="dim">${esc(r.role)}${r.round ? " · " + esc(r.round) : ""}</span>` : ""}
+        ${issues.length ? `<ul class="issues">${issues.map(i => `<li class="${i[0]}">${esc(i[1])}</li>`).join("")}</ul>` : ""}</td>
+      <td class="when">${when}</td>
+      <td class="mono">${r.dur ?? "—"} min</td>
+      <td>${r.interviewers.length ? r.interviewers.map(esc).join("<br>") : `<span class="dim">Candidate only</span>`}</td>
+      <td>${stSel}</td>
+      <td><span class="pill ${cls}">${label}</span>${link}<br><span class="dim">Row ${r.line}</span></td></tr>`;
+  }).join("");
+  const n = S.rows.length, err = S.rows.filter(r => r.issues.some(i => i[0] === "e")).length;
+  const sent = S.rows.filter(r => r.state === "sent").length, todo = syncable().length;
+  const inv = S.rows.filter(r => rowAction(r) === "invite").length, rec = S.rows.filter(r => rowAction(r) === "record").length;
+  const done = S.rows.filter(r => ["Completed", "No-show"].includes(r.ivStatus)).length;
+  $("summary").innerHTML = S.sample ? "" : `<span><b>${n}</b>rows</span><span><b>${inv}</b>invites to send</span><span><b>${rec}</b>to record by status</span><span><b>${done}</b>done / no-show</span><span><b>${sent}</b>invites sent</span><span><b>${err}</b>need fixing</span>`;
+  const btn = $("syncBtn");
+  btn.disabled = S.syncing || !todo;
+  btn.textContent = S.syncing ? "Saving…" : !todo ? "Sync & send invites" : inv && rec ? `Sync: send ${plural(inv, "invite")}, record ${rec}` : inv ? `Sync & send ${plural(inv, "invite")}` : `Record ${plural(rec, "interview")}`;
+  $("clearBtn").disabled = S.syncing;
+}
+
+function renderSettings(){
+  const st = $("sheetStatus");
+  if (!S.sheetId) st.innerHTML = `<div class="banner info">No hiring sheet linked yet. ${S.token ? "Create one, or paste the link to your clinic's sheet." : "Connect Google first."}</div>`;
+  else st.innerHTML = `<div class="banner ${S.dbErr ? "bad" : "ok"}"><span>${S.dbErr ? esc(S.dbErr) : S.db ? `Connected to <a href="${esc(sheetUrl())}" target="_blank" rel="noopener"><b>${esc(S.sheetTitle)}</b></a>.` : "Sheet linked — connect Google to load it."}</span>
+    <span class="rowacts" style="margin-left:auto"><button class="btn small" type="button" data-act="copy-sheet">Copy link for colleagues</button><button class="btn small" type="button" data-act="unlink-sheet">Unlink</button></span></div>
+    <p class="hint">To work as a team, open the sheet, press <b>Share</b> and add colleagues as <b>Editor</b>. They then paste the same link here. Salary details are in this sheet, so share it only with people who should see them.</p>`;
+  $("createSheetBtn").disabled = !S.token;
+  $("createSheetBtn").textContent = S.sheetId ? "Create a different hiring sheet" : "Create a new hiring sheet";
+}
+
+function renderCalendars(){
+  const sel = $("calendarSel");
+  if (!S.calendars.length) { sel.innerHTML = `<option>Connect Google first</option>`; sel.disabled = true; return; }
+  sel.disabled = false;
+  sel.innerHTML = S.calendars.map(c => `<option value="${esc(c.id)}"${c.id === S.calId ? " selected" : ""}>${esc(c.summaryOverride || c.summary)}${c.primary ? " (primary)" : ""}${c.accessRole === "writer" ? " — shared" : ""}</option>`).join("");
+}
+
+function renderTz(){
+  let zones = []; try { zones = Intl.supportedValuesOf("timeZone"); } catch { zones = [S.tz, "UTC"]; }
+  if (!zones.includes(S.tz)) zones.unshift(S.tz);
+  $("tzSel").innerHTML = zones.map(z => `<option${z === S.tz ? " selected" : ""}>${esc(z)}</option>`).join("");
+}
+
+/* ============ Wiring ============ */
+// Runs an async action, showing errors as a toast and disabling the button meanwhile.
+async function run(btn, fn){
+  if (btn?.disabled) return;
+  const label = btn?.textContent; if (btn) { btn.disabled = true; if (btn.matches(".primary")) btn.textContent = "Saving…"; }
+  try { await fn(); } catch (e) { toast(e.message); }
+  finally { if (btn) { btn.disabled = false; if (btn.matches(".primary") && btn.textContent === "Saving…") btn.textContent = label; } }
+}
+
+document.addEventListener("click", e => {
+  const tab = e.target.closest("#tabs button"); if (tab) { go(tab.dataset.view); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const id = a.dataset.id;
+  switch (a.dataset.act) {
+    case "go": go(a.dataset.view); break;
+    case "connect": connect(); break;
+    case "signout": signOut(); break;
+    case "refresh": run(a, refresh); break;
+    case "close": a.closest("dialog").close(); break;
+    case "cand": openCandidate(id); break;
+    case "new-cand": openCandidate(null); break;
+    case "pos": openPosition(id); break;
+    case "new-pos": openPosition(null); break;
+    case "pos-cands": $("posDlg").close(); S.f = { ...S.f, pos: S.pid, stage: "all" }; go("candidates"); break;
+    case "new-iv": openInterview(null, null); break;
+    case "new-iv-cand": openInterview(null, S.cid); break;
+    case "sched-cand": openInterview(null, id); break;
+    case "edit-iv": openInterview(id); break;
+    case "cancel-iv-dlg": run(a, cancelInterviewFromDialog); break;
+    case "pipe": S.f = { ...S.f, pos: a.dataset.pos, stage: a.dataset.stage, q: "" }; $("fQ").value = ""; go("candidates"); break;
+    case "kpi-stage": S.f = { ...S.f, pos: "", stage: a.dataset.stage, q: "" }; $("fQ").value = ""; go("candidates"); break;
+    case "kpi-iv": S.ivf = a.dataset.f; go("interviews"); break;
+    case "stage-chip": S.f.stage = a.dataset.stage; renderCandidates(); break;
+    case "iv-chip": S.ivf = a.dataset.f; if (S.ivf !== "upcoming") S.ivReply = ""; renderInterviews(); break;
+    case "reply-chip": S.ivReply = S.ivReply === a.dataset.r ? "" : a.dataset.r; if (S.ivReply) S.ivf = "upcoming"; renderInterviews(); break;
+    case "refresh-replies": run(a, loadResponses); break;
+    case "link-invites": run(a, linkInvites); break;
+    case "add-meet": run(a, () => addMeet(id)); break;
+    case "add-guest": run(a, () => addGuest(id)); break;
+    case "view-cv": openCandidate(id); S.cvOpen = !!cvPreviewUrl(C(id)?.resumeLink); renderDrawer(); $("cvSection").scrollIntoView({ block: "start" }); break;
+    case "cv-toggle": S.cvOpen = !S.cvOpen; renderDrawer(); break;
+    case "cv-pick": $("cvFile").click(); break;
+    case "cv-remove": run(a, removeCv); break;
+    case "sched-cancel": S.confirmCancel = id; renderSchedule(); break;
+    case "sched-cancel-no": S.confirmCancel = null; renderSchedule(); break;
+    case "sched-cancel-yes": run(a, () => cancelFromCalendar(id)); break;
+    case "copy-meet": navigator.clipboard?.writeText(a.dataset.url).then(() => toast("Meet link copied"), () => toast(a.dataset.url)); break;
+    case "joined": run(a, async () => { const c = C(id); const ops = stageOps(c, "Joined"); if (!c.joiningDate) ops[0].patch.joiningDate = todayYMD(); await commit(ops); toast(`${c.name} marked as joined`); renderAll(); }); break;
+    case "archive": run(a, async () => { const c = C(S.cid); const arch = !c.archived; await commit([{ tab: "Candidates", id: c.id, patch: { archived: arch ? "yes" : "" } }, note(c.id, "system", arch ? "Archived" : "Restored from archive")]); toast(arch ? "Archived — hidden from lists unless you tick Show archived" : "Restored"); renderAll(); }); break;
+    case "create-sheet": run(a, createSheet); break;
+    case "link-sheet": {
+      const v = $("sheetUrl").value.trim(), m = v.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/) || v.match(/^([a-zA-Z0-9_-]{30,})$/);
+      if (!m) { toast("Paste the full Google Sheets link (it contains /spreadsheets/d/…)."); break; }
+      setSheet(m[1]); $("sheetUrl").value = "";
+      if (S.token) run(a, async () => { await openSheet(); if (S.db) { toast(`Linked to ${S.sheetTitle}`); loadResponses(); } }); else { renderAll(); toast("Linked. Connect Google to load it."); }
+      break;
+    }
+    case "unlink-sheet": if (confirm("Unlink this hiring sheet from this browser? The sheet itself is not deleted.")) { setSheet(""); renderAll(); } break;
+    case "rec-load-tab": run(a, loadRecTab); break;
+    case "rec-file": $("recFile").click(); break;
+    case "rec-import": run(a, importRecords); break;
+    case "rec-clear": S.rec = null; renderRec(); break;
+    case "copy-sheet": navigator.clipboard?.writeText(sheetUrl()).then(() => toast("Link copied"), () => toast(sheetUrl())); break;
+  }
+});
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("tr.click")) e.target.click(); });
+
+$("candForm").addEventListener("submit", e => { e.preventDefault(); run($("cSave"), saveCandidate); });
+$("cStage").addEventListener("change", () => { if (S.cid) changeStage(); });
+$("noteForm").addEventListener("submit", e => { e.preventDefault(); const t = $("noteText").value.trim(); if (!t) return;
+  run(e.submitter, async () => { await commit([note(S.cid, "note", t)]); $("noteText").value = ""; renderDrawer(); }); });
+$("ivForm").addEventListener("submit", e => { e.preventDefault(); run($("ivSave"), saveInterview); });
+$("posForm").addEventListener("submit", e => { e.preventDefault(); run($("pSave"), savePosition); });
+$("candDlg").addEventListener("close", () => { if (!$("candDlg").open) { S.cid = null; S.base = null; S.cvOpen = false; } });   // the event arrives late: ignore it if the panel was reopened meanwhile
+$("fQ").addEventListener("input", () => { S.f.q = $("fQ").value; renderCandidates(); });
+$("fPos").addEventListener("change", () => { S.f.pos = $("fPos").value; renderCandidates(); });
+$("fArch").addEventListener("change", () => { S.f.archived = $("fArch").checked; renderCandidates(); });
+$("ivPos").addEventListener("change", () => { S.ivPos = $("ivPos").value; renderInterviews(); });
+
+$("originText").textContent = location.origin;
+$("clientId").value = S.clientId;
+$("dateFmt").value = store.get("dateFmt", /en-US/.test(navigator.language) ? "MDY" : "DMY");
+["titleTpl", "descTpl", "orgName"].forEach(id => { const key = id + ".v2"; const v = store.get(key, null); if (v != null) $(id).value = v; $(id).addEventListener("change", () => { store.set(key, $(id).value); renderAll(); }); });
+$("meetChk").checked = store.get("meet", true); $("meetChk").addEventListener("change", () => store.set("meet", $("meetChk").checked));
+$("autoSync").checked = store.get("autoSync", false); $("autoSync").addEventListener("change", () => store.set("autoSync", $("autoSync").checked));
+$("dateFmt").addEventListener("change", () => store.set("dateFmt", $("dateFmt").value));
+$("tzSel").addEventListener("change", () => { S.tz = $("tzSel").value; store.set("tz", S.tz); S.rows.forEach(r => { if (r.state !== "sent" && r.state !== "exists") r.state = "pending"; }); renderAll(); });
+$("calendarSel").addEventListener("change", () => {
+  S.calId = $("calendarSel").value; store.set("calId", S.calId);
+  const c = S.calendars.find(x => x.id === S.calId);
+  if (c?.timeZone && c.timeZone !== S.tz) toast(`This calendar uses ${c.timeZone}. Interview times are read as ${S.tz} — change it below if needed.`);
+  S.rows.forEach(r => { r.state = "pending"; r.link = ""; r.error = ""; }); renderReview(); loadResponses();
+});
+$("saveClient").addEventListener("click", () => {
+  const v = $("clientId").value.trim();
+  if (!/\.apps\.googleusercontent\.com$/.test(v)) { toast("That doesn't look like a Google OAuth client ID (it ends in .apps.googleusercontent.com)."); return; }
+  S.clientId = v; store.set("clientId", v); S.tokenClient = null; toast("Saved. Now press Connect Google."); renderAll();
+});
+$("syncBtn").addEventListener("click", syncAll);
+$("reviewBody").addEventListener("change", e => { const i = e.target.dataset?.ivrow; if (i == null) return; const r = S.rows[+i]; r.ivStatus = e.target.value; if (["recorded", "updated", "same", "exists", "sent"].includes(r.state) && r.ivStatus !== "Scheduled") r.state = "pending"; renderReview(); });
+$("clearBtn").addEventListener("click", () => { loadSample(); $("syncMsg").hidden = true; renderReview(); });
+$("templateBtn").addEventListener("click", downloadTemplate);
+$("cvFile").addEventListener("change", () => { const f = $("cvFile").files[0]; $("cvFile").value = ""; if (f) attachCv(f); });
+$("cvBody").addEventListener("dragover", e => { if (e.target.closest("#cvDrop")) { e.preventDefault(); e.target.closest("#cvDrop").classList.add("over"); } });
+$("cvBody").addEventListener("dragleave", e => e.target.closest("#cvDrop")?.classList.remove("over"));
+$("cvBody").addEventListener("drop", e => { if (!e.target.closest("#cvDrop")) return; e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) attachCv(f); });
+$("cvBody").addEventListener("keydown", e => { if (e.target.id === "cvDrop" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); $("cvFile").click(); } });
+$("cvShare").value = store.get("cvShare", ""); $("cvShare").addEventListener("change", () => store.set("cvShare", $("cvShare").value.trim()));
+$("recFile").addEventListener("change", () => { const f = $("recFile").files[0]; if (f) loadRecFile(f); $("recFile").value = ""; });
+$("recBody").addEventListener("change", e => { const c = e.target.dataset?.col; if (c == null) return; if (e.target.value) S.rec.map[c] = e.target.value; else delete S.rec.map[c]; S.rec.result = null; renderRec(); });
+const drop = $("drop"), fileIn = $("fileIn");
+drop.addEventListener("click", () => fileIn.click());
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
+fileIn.addEventListener("change", () => { if (fileIn.files[0]) importFile(fileIn.files[0]); fileIn.value = ""; });
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) importFile(f); });
+// Colleagues edit the same sheet: pull fresh data when you come back to the tab.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && S.db && S.token && Date.now() < S.tokenExp && Date.now() - S.loadedAt > 60000 && !document.querySelector("dialog[open]")) refresh();
+});
+window.addEventListener("hashchange", () => go(location.hash.slice(1)));
+
+renderTz(); loadSample();
+go(location.hash.slice(1) || (S.clientId ? "dashboard" : "settings"));
+resumeSession();
+if (location.protocol === "file:") toast("Google sign-in doesn't work from a file opened directly. Serve this folder (see README) and open it over http://localhost or https.");
+</script>
+</body>
+</html>
