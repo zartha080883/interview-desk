@@ -1,0 +1,16 @@
+# Candidate data must never be committed — this repository is public.
+*.xlsx
+*.xls
+*.csv
+!interview-import-template.xlsx
+
+# CVs / resumes
+*.pdf
+*.doc
+*.docx
+
+# macOS / editors
+.DS_Store
+*.command
+.vscode/
+.idea/
