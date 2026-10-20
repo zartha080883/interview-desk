@@ -388,6 +388,17 @@ dialog.drawer{margin:0 0 0 auto;height:100dvh;max-height:100dvh;width:min(780px,
           <div><button class="btn primary" id="saveClient" type="button">Save client ID</button></div>
           <p class="hint">Stored only in this browser. You can also set <code>DEFAULT_CLIENT_ID</code> (and <code>DEFAULT_SHEET_ID</code>) at the top of the script so nobody has to paste anything.</p>
         </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Move settings to another copy</h2><span class="sub">e.g. from your Mac to the website</span></div>
+          <p class="hint">Your records (candidates, interviews, notes, CVs) live in the hiring sheet and Google, so any copy of the desk linked to the same sheet shows them automatically. Settings are kept separately for each web address — copy them here, then paste them into the other copy.</p>
+          <div class="rowacts"><button class="btn primary" type="button" data-act="copy-settings">Copy settings</button><span class="hint">Includes the client ID, hiring sheet link, calendar, time zone, invite templates and CV sharing. No passwords or sign-in data.</span></div>
+          <div class="field">
+            <label for="settingsCode">Paste settings from another copy</label>
+            <textarea id="settingsCode" rows="3" placeholder="IDESK1:…" spellcheck="false" style="font-family:var(--mono);font-size:.78rem"></textarea>
+          </div>
+          <div><button class="btn" type="button" data-act="apply-settings">Apply settings</button></div>
+        </section>
       </div>
 
       <section class="panel">
@@ -2039,6 +2050,22 @@ function renderTz(){
   $("tzSel").innerHTML = zones.map(z => `<option${z === S.tz ? " selected" : ""}>${esc(z)}</option>`).join("");
 }
 
+/* ============ Moving settings between copies (e.g. localhost -> GitHub Pages) ============ */
+// Everything the desk keeps in this browser is under the "idesk:" prefix. The sign-in token lives in sessionStorage and is never included.
+function settingsCode(){
+  const o = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("idesk:")) o[k.slice(6)] = JSON.parse(localStorage.getItem(k)); } } catch {}
+  return "IDESK1:" + btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(o))));
+}
+function applySettingsCode(code){
+  const m = /^IDESK1:([A-Za-z0-9+/=\s]+)$/.exec(String(code || "").trim());
+  if (!m) throw new Error("That doesn't look like a settings code — it starts with IDESK1:");
+  const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(m[1].replace(/\s+/g, "")), c => c.charCodeAt(0))));
+  if (!o || typeof o !== "object") throw new Error("That settings code is damaged. Copy it again.");
+  Object.entries(o).forEach(([k, v]) => { if (/^[\w.:@+-]+$/.test(k)) store.set(k, v); });
+  return Object.keys(o).length;
+}
+
 /* ============ Wiring ============ */
 // Runs an async action, showing errors as a toast and disabling the button meanwhile.
 async function run(btn, fn){
@@ -2101,6 +2128,11 @@ document.addEventListener("click", e => {
     case "rec-file": $("recFile").click(); break;
     case "rec-import": run(a, importRecords); break;
     case "rec-clear": S.rec = null; renderRec(); break;
+    case "copy-settings": { const code = settingsCode(); navigator.clipboard?.writeText(code).then(() => toast("Settings copied — paste them into the other copy's Settings page"), () => { $("settingsCode").value = code; $("settingsCode").select(); toast("Copy the selected code"); }); break; }
+    case "apply-settings":
+      try { const n = applySettingsCode($("settingsCode").value); if (!n) { toast("That code has no settings in it."); break; } toast(`Applied ${n} settings — reloading…`); setTimeout(() => location.reload(), 900); }
+      catch (e) { toast(e.message); }
+      break;
     case "copy-sheet": navigator.clipboard?.writeText(sheetUrl()).then(() => toast("Link copied"), () => toast(sheetUrl())); break;
   }
 });
